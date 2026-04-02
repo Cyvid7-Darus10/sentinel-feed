@@ -199,7 +199,7 @@ export function SectorMap({ stories, onSelectTopic }: SectorMapProps) {
   }, [stories]);
 
   return (
-    <div className="sector-grid h-full overflow-y-auto p-3">
+    <div className="sector-grid h-full overflow-y-auto p-0 sm:p-3">
       {TOPICS.map((topic) => (
         <Sector
           key={topic.id}

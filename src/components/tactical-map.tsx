@@ -151,96 +151,114 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
   return (
     <div className="flex h-screen flex-col">
       {/* ── Header Bar ── */}
-      <header className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-border bg-bg-primary px-5 py-2.5">
-        <span className="text-[14px] font-bold uppercase tracking-[0.1em] text-text-bright">
-          Sentinel
-        </span>
-
-        <div className="hidden h-4 w-px bg-border sm:block" />
-
-        {/* Source Filters */}
-        <div className="flex items-center gap-1">
-          {SOURCES.map((s) => (
-            <button
-              key={s.id ?? 'all'}
-              onClick={() => setActiveSource(s.id)}
-              aria-pressed={activeSource === s.id}
-              className={`filter-btn ${
-                activeSource === s.id ? 'filter-btn-active' : 'filter-btn-inactive'
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Time Filters */}
-        <div className="flex items-center gap-1">
-          {TIME_RANGES.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setActiveRange(t.id)}
-              aria-pressed={activeRange === t.id}
-              className={`filter-btn ${
-                activeRange === t.id ? 'filter-btn-active' : 'filter-btn-inactive'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {/* View Toggle */}
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setViewMode('radar')}
-            aria-pressed={viewMode === 'radar'}
-            className={`filter-btn ${viewMode === 'radar' ? 'filter-btn-active' : 'filter-btn-inactive'}`}
-            title="Radar view"
-          >
-            RADAR
-          </button>
-          <button
-            onClick={() => setViewMode('map')}
-            aria-pressed={viewMode === 'map'}
-            className={`filter-btn ${viewMode === 'map' ? 'filter-btn-active' : 'filter-btn-inactive'}`}
-            title="Sector map view"
-          >
-            MAP
-          </button>
-          <button
-            onClick={() => setViewMode('list')}
-            aria-pressed={viewMode === 'list'}
-            className={`filter-btn ${viewMode === 'list' ? 'filter-btn-active' : 'filter-btn-inactive'}`}
-            title="List view"
-          >
-            LIST
-          </button>
-        </div>
-
-        {/* Search */}
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={handleSearch}
-          placeholder="Search..."
-          className="search-input w-full sm:w-44"
-          aria-label="Search stories"
-        />
-
-        {/* Stats */}
-        <div className="ml-auto flex items-center gap-4 text-[11px] text-text-secondary">
-          <span>
-            <span className="text-text-bright">{filtered.length}</span> stories
+      <header className="border-b border-border bg-bg-primary">
+        {/* Top row: brand + view toggle + search + stats */}
+        <div className="flex items-center gap-x-4 px-4 py-2">
+          <span className="shrink-0 text-[14px] font-bold uppercase tracking-[0.1em] text-text-bright">
+            Sentinel
           </span>
-          <span>
-            <span className="text-text-bright">{sourceCount}</span> sources
-          </span>
-          {lastUpdate && (
-            <span className="hidden lg:inline">
-              updated <span className="text-success">{lastUpdate}</span>
+
+          <div className="hidden h-4 w-px bg-border sm:block" />
+
+          {/* View Toggle */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setViewMode('radar')}
+              aria-pressed={viewMode === 'radar'}
+              className={`filter-btn ${viewMode === 'radar' ? 'filter-btn-active' : 'filter-btn-inactive'}`}
+              title="Radar view"
+            >
+              RADAR
+            </button>
+            <button
+              onClick={() => setViewMode('map')}
+              aria-pressed={viewMode === 'map'}
+              className={`filter-btn ${viewMode === 'map' ? 'filter-btn-active' : 'filter-btn-inactive'}`}
+              title="Sector map view"
+            >
+              MAP
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              aria-pressed={viewMode === 'list'}
+              className={`filter-btn ${viewMode === 'list' ? 'filter-btn-active' : 'filter-btn-inactive'}`}
+              title="List view"
+            >
+              LIST
+            </button>
+          </div>
+
+          {/* Search */}
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={handleSearch}
+            placeholder="Search..."
+            className="search-input hidden w-44 sm:block"
+            aria-label="Search stories"
+          />
+
+          {/* Stats */}
+          <div className="ml-auto flex shrink-0 items-center gap-3 text-[11px] text-text-secondary">
+            <span>
+              <span className="text-text-bright">{filtered.length}</span> stories
             </span>
-          )}
+            <span className="hidden sm:inline">
+              <span className="text-text-bright">{sourceCount}</span> sources
+            </span>
+            {lastUpdate && (
+              <span className="hidden lg:inline">
+                updated <span className="text-success">{lastUpdate}</span>
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom row: filters (scrollable on mobile) */}
+        <div className="flex items-center gap-3 overflow-x-auto px-4 pb-2">
+          {/* Source Filters */}
+          <div className="flex shrink-0 items-center gap-1">
+            {SOURCES.map((s) => (
+              <button
+                key={s.id ?? 'all'}
+                onClick={() => setActiveSource(s.id)}
+                aria-pressed={activeSource === s.id}
+                className={`filter-btn ${
+                  activeSource === s.id ? 'filter-btn-active' : 'filter-btn-inactive'
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="h-4 w-px shrink-0 bg-border" />
+
+          {/* Time Filters */}
+          <div className="flex shrink-0 items-center gap-1">
+            {TIME_RANGES.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setActiveRange(t.id)}
+                aria-pressed={activeRange === t.id}
+                className={`filter-btn ${
+                  activeRange === t.id ? 'filter-btn-active' : 'filter-btn-inactive'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Mobile search (visible only on small screens) */}
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={handleSearch}
+            placeholder="Search..."
+            className="search-input block w-36 shrink-0 sm:hidden"
+            aria-label="Search stories"
+          />
         </div>
       </header>
 

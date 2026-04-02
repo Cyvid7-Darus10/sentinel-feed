@@ -248,23 +248,34 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
   const size = 700;
   const cx = size / 2;
   const cy = size / 2;
-  const outerR = size / 2 - 50;
+  const outerR = size / 2 - 70; // extra padding for labels
 
   const plotted = useMemo(() => plotStories(stories, cx, cy, outerR), [stories, cx, cy, outerR]);
   const criticalCount = useMemo(() => plotted.filter((p) => p.critical).length, [plotted]);
 
-  const handleDotHover = useCallback(
-    (p: PlottedStory, e: React.MouseEvent) => {
+  const handleDotInteract = useCallback(
+    (p: PlottedStory, e: React.MouseEvent | React.TouchEvent) => {
+      // On touch, toggle; on mouse, show
+      if (hoveredStory?.story.id === p.story.id && 'touches' in e) {
+        setHoveredStory(null);
+        return;
+      }
       setHoveredStory(p);
       const rect = containerRef.current?.getBoundingClientRect();
       if (rect) {
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        const rawX = clientX - rect.left + 16;
+        const rawY = clientY - rect.top - 12;
+        // Clamp tooltip within container
+        const maxX = rect.width - 320;
         setTooltipPos({
-          x: e.clientX - rect.left + 16,
-          y: e.clientY - rect.top - 12,
+          x: Math.max(8, Math.min(rawX, maxX)),
+          y: Math.max(8, rawY),
         });
       }
     },
-    []
+    [hoveredStory]
   );
 
   const handleDotLeave = useCallback(() => {
@@ -466,8 +477,9 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
                     filter: p.critical ? 'drop-shadow(0 0 6px #f87171)' : `drop-shadow(0 0 2px ${p.topicColor})`,
                     '--dot-color': p.critical ? '#f87171' : p.topicColor,
                   } as React.CSSProperties}
-                  onMouseEnter={(e) => handleDotHover(p, e)}
+                  onMouseEnter={(e) => handleDotInteract(p, e)}
                   onMouseLeave={handleDotLeave}
+                  onTouchStart={(e) => { e.preventDefault(); handleDotInteract(p, e); }}
                 />
               </a>
             </g>
@@ -483,7 +495,7 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
         {/* ── Sector labels ── */}
         {TOPICS.map((topic, i) => {
           const midAngle = (i + 0.5) * sectorAngle - Math.PI / 2;
-          const labelR = outerR + 24;
+          const labelR = outerR + 40;
           const lx = cx + labelR * Math.cos(midAngle);
           const ly = cy + labelR * Math.sin(midAngle);
           const count = plotted.filter((p) => p.topicIdx === i).length;
@@ -491,24 +503,24 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
             <g key={`label-${topic.id}`} className="cursor-pointer" onClick={() => onSelectTopic(topic.id)}>
               <text
                 x={lx}
-                y={ly - 6}
+                y={ly - 8}
                 textAnchor="middle"
                 dominantBaseline="central"
                 fill={topic.color}
-                fontSize="10"
+                fontSize="16"
                 fontWeight="700"
                 fontFamily="var(--font-mono)"
-                letterSpacing="0.08em"
+                letterSpacing="0.06em"
               >
                 {topic.label}
               </text>
               <text
                 x={lx}
-                y={ly + 7}
+                y={ly + 10}
                 textAnchor="middle"
                 dominantBaseline="central"
                 fill={topic.color}
-                fontSize="9"
+                fontSize="13"
                 fontFamily="var(--font-mono)"
                 opacity="0.5"
               >
@@ -519,43 +531,38 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
         })}
       </svg>
 
-      {/* Tooltip */}
+      {/* Tooltip — fixed top-center on mobile, cursor-following on desktop */}
       {hoveredStory && (
         <div
-          className="pointer-events-none absolute z-50"
+          className="pointer-events-none absolute z-50 max-sm:left-2 max-sm:right-2 max-sm:top-10 sm:left-auto sm:right-auto sm:top-auto"
           style={{
-            left: tooltipPos.x,
-            top: tooltipPos.y,
-            transform: tooltipPos.x > (containerRef.current?.clientWidth ?? 700) / 2
-              ? 'translateX(-100%)'
-              : 'translateX(0)',
+            ...((typeof window !== 'undefined' && window.innerWidth >= 640) ? {
+              left: tooltipPos.x,
+              top: tooltipPos.y,
+              transform: tooltipPos.x > (containerRef.current?.clientWidth ?? 700) / 2
+                ? 'translateX(-100%)'
+                : 'translateX(0)',
+            } : {}),
           }}
         >
-          <TooltipContent story={hoveredStory.story} topicColor={hoveredStory.topicColor} />
+          <div className="max-sm:w-full">
+            <TooltipContent story={hoveredStory.story} topicColor={hoveredStory.topicColor} />
+          </div>
         </div>
       )}
 
-      {/* Legend */}
-      <div className="absolute bottom-3 left-3 z-10 flex items-center gap-5 text-[10px] text-text-muted">
+      {/* Legend — single centered bar */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-border/50 bg-bg-base/80 px-3 py-2 text-[10px] text-text-muted backdrop-blur-sm">
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-3 w-3 rounded-full bg-danger" style={{ boxShadow: '0 0 6px #f87171' }} />
+          <span className="inline-block h-2.5 w-2.5 rounded-full bg-danger" style={{ boxShadow: '0 0 4px #f87171' }} />
           CRITICAL
         </span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2 w-2 rounded-full" style={{ background: '#94a3b8' }} />
-          SMALL = LOW
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-3.5 w-3.5 rounded-full" style={{ background: '#94a3b8' }} />
-          LARGE = HIGH
-        </span>
-      </div>
-
-      {/* Topic color legend (right side) */}
-      <div className="absolute bottom-3 right-3 z-10 flex items-center gap-3 text-[10px] text-text-muted">
+        <span className="hidden text-border sm:inline">|</span>
+        <span>LARGE = HIGH SCORE</span>
+        <span className="hidden text-border sm:inline">|</span>
         {TOPICS.map((topic) => (
           <span key={topic.id} className="flex items-center gap-1">
-            <span className="inline-block h-2 w-2 rounded-full" style={{ background: topic.color }} />
+            <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: topic.color }} />
             <span style={{ color: topic.color }}>{topic.label}</span>
           </span>
         ))}
