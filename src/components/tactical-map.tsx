@@ -51,6 +51,7 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('radar');
   const [showBanner, setShowBanner] = useState(false);
+  const [rateLimited, setRateLimited] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !localStorage.getItem('sentinel-banner-dismissed')) {
@@ -71,6 +72,11 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
           fetch(`/api/stories?days=${days}`),
           fetch('/api/sources'),
         ]);
+        if (storiesRes.status === 429 || healthRes.status === 429) {
+          setRateLimited(true);
+          return;
+        }
+        setRateLimited(false);
         if (storiesRes.ok) {
           const data = await storiesRes.json();
           setStories(data.stories);
@@ -263,6 +269,15 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
           />
         </div>
       </header>
+
+      {/* ── Rate Limited Banner ── */}
+      {rateLimited && (
+        <div className="flex items-center gap-3 border-b border-danger/30 bg-danger/5 px-4 py-2">
+          <span className="text-[12px] text-danger">
+            Too many requests — auto-refresh paused. Try again in a moment.
+          </span>
+        </div>
+      )}
 
       {/* ── macOS App Banner ── */}
       {showBanner && (
