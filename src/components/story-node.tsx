@@ -1,4 +1,5 @@
 import type { Story } from '@/lib/types';
+import { getSourceConfig, formatScore } from '@/lib/sources';
 import { relativeTime } from '@/lib/utils';
 
 interface StoryNodeProps {
@@ -6,31 +7,9 @@ interface StoryNodeProps {
   readonly topicColor: string;
 }
 
-function sourceBadge(source: string): { label: string; className: string } {
-  switch (source) {
-    case 'hackernews':
-      return { label: 'HN', className: 'badge-hn' };
-    case 'github-trending':
-      return { label: 'GH', className: 'badge-gh' };
-    case 'lobsters':
-      return { label: 'LO', className: 'badge-lo' };
-    case 'devto':
-      return { label: 'DEV', className: 'badge-dev' };
-    default:
-      return { label: source.slice(0, 2).toUpperCase(), className: 'bg-info text-black' };
-  }
-}
-
-function formatScore(story: Story): string | null {
-  if (story.score === null || story.score === 0) return null;
-  if (story.source === 'github-trending') return `${story.score.toLocaleString()} \u2605`;
-  if (story.source === 'devto') return `${story.score.toLocaleString()} \u2764`;
-  return `${story.score.toLocaleString()} pts`;
-}
-
 export function StoryNode({ story, topicColor }: StoryNodeProps) {
-  const badge = sourceBadge(story.source);
-  const scoreText = formatScore(story);
+  const source = getSourceConfig(story.source);
+  const scoreText = formatScore(story.source, story.score);
   const displayTime = story.publishedAt ?? story.fetchedAt;
 
   return (
@@ -51,7 +30,7 @@ export function StoryNode({ story, topicColor }: StoryNodeProps) {
             </p>
           )}
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-text-muted sm:text-[11px]">
-            <span className={`badge ${badge.className}`}>{badge.label}</span>
+            <span className={`badge ${source.badgeClass}`}>{source.badge}</span>
             {story.author && <span>{story.author}</span>}
             <span>{relativeTime(displayTime)}</span>
             {story.tags.length > 0 && (

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Story, SourceId, SourceHealth } from '@/lib/types';
 import { TOPICS, categorizeStories } from '@/lib/topics';
+import { SOURCE_FILTER_OPTIONS } from '@/lib/sources';
 import { relativeTime } from '@/lib/utils';
 import { StoryNode } from './story-node';
 import { SectorMap } from './sector-map';
@@ -33,14 +34,6 @@ function timeRangeToMs(range: TimeRange): number {
       return 7 * 24 * 3_600_000;
   }
 }
-
-const SOURCES: readonly { id: SourceId | null; label: string }[] = [
-  { id: null, label: 'ALL' },
-  { id: 'hackernews', label: 'HN' },
-  { id: 'github-trending', label: 'GH' },
-  { id: 'lobsters', label: 'LO' },
-  { id: 'devto', label: 'DEV' },
-];
 
 const TIME_RANGES: readonly { id: TimeRange; label: string }[] = [
   { id: '6h', label: '6H' },
@@ -217,7 +210,7 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
         <div className="flex items-center gap-3 overflow-x-auto px-4 pb-2">
           {/* Source Filters */}
           <div className="flex shrink-0 items-center gap-1">
-            {SOURCES.map((s) => (
+            {SOURCE_FILTER_OPTIONS.map((s) => (
               <button
                 key={s.id ?? 'all'}
                 onClick={() => setActiveSource(s.id)}

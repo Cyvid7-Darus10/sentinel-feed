@@ -2,9 +2,9 @@
 
 <h1>Sentinel Feed</h1>
 
-<p><strong>Open-source tech news aggregator for developers</strong></p>
+<p><strong>AI-curated tech intelligence radar for developers</strong></p>
 
-<p>Pulls from 5 sources every 15 minutes, auto-categorizes by topic, ranks by community score, and optionally enriches with AI summaries.</p>
+<p>Aggregates 5 sources every 15 minutes. Auto-categorizes into 6 topic sectors. Flags critical security stories. Summarizes with AI. Three visualization modes: Radar, Map, and List.</p>
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6)](https://www.typescriptlang.org)
@@ -14,57 +14,100 @@
 
 <br />
 
-<img src="docs/screenshots/dashboard-desktop.png" alt="Sentinel Feed — Map View" width="860" />
+<img src="docs/screenshots/radar-desktop.png" alt="Sentinel Feed — Radar View" width="860" />
 
 </div>
 
 <br />
 
-## Overview
+## Why Sentinel Feed?
 
-Sentinel Feed replaces the daily ritual of cycling through Hacker News, GitHub Trending, Reddit, Lobsters, and Dev.to. It fetches, deduplicates, categorizes, and ranks stories from all five sources into a single dashboard — updated every 15 minutes.
+Developers waste time cycling through Hacker News, GitHub Trending, Reddit, Lobsters, and Dev.to every day. Sentinel Feed consolidates all five into a single dashboard that fetches, deduplicates, categorizes, and ranks stories automatically — updated every 15 minutes, consumed in 5.
 
-Two view modes are available:
+**Key features:**
 
-| Map View | List View |
-|----------|-----------|
-| <img src="docs/screenshots/dashboard-desktop.png" alt="Map View" width="420" /> | <img src="docs/screenshots/list-view.png" alt="List View" width="420" /> |
-| Topic sectors at a glance — see what's hot in each category | Full-detail feed sorted by score — best for reading |
+- **Radar view** — circular tactical display with dots sized by score, critical stories pulsing red, and a rotating sweep line
+- **Map view** — 6 topic sectors in a grid, each showing top stories with AI summaries and hover tooltips
+- **List view** — full-detail feed sorted by score with topic tabs
+- **Critical alerts** — CVEs, vulnerabilities, zero-days, and breaches are auto-detected and flagged
+- **AI summaries** — optional one-liner descriptions powered by Claude Haiku
+- **Source filtering** — toggle any combination of HN, GitHub, Lobsters, Dev.to, Reddit
+- **Time ranges** — 6h, 12h, 24h, or 7d windows
+- **Search** — instant full-text search across titles, summaries, authors, and tags
+- **Mobile-responsive** — all three views adapt to any screen size
 
-Stories are filtered by topic with a single click:
+## Views
+
+### Radar View
+
+Stories plotted as dots in 6 topic sectors. Higher score = closer to center, larger dot. Critical stories (CVEs, vulnerabilities) pulse red with glow effects. CRT scanline overlay and rotating sweep line complete the tactical aesthetic.
+
+<img src="docs/screenshots/radar-desktop.png" alt="Radar View" width="860" />
+
+### Map View
+
+All 6 topic sectors visible simultaneously. Each sector shows top stories with source badges, AI summaries, and scores. Hover any story for a full-detail tooltip. Click a sector to drill into List view.
+
+<img src="docs/screenshots/map-desktop.png" alt="Map View" width="860" />
+
+### List View
+
+Traditional feed sorted by community score. Topic tabs filter by category. Each card shows title, AI summary, source badge, author, relative time, tags, and score.
+
+<img src="docs/screenshots/list-desktop.png" alt="List View" width="860" />
+
+### Topic Filtering
+
+Click any topic tab to filter — here showing AI/ML stories:
 
 <img src="docs/screenshots/topic-filter.png" alt="Topic Filter — AI/ML" width="860" />
 
-Mobile-responsive layout adapts automatically:
+### Mobile
+
+All views are fully responsive. Radar labels scale for small screens, map sectors stack vertically, and filter bars scroll horizontally.
 
 <p align="center">
-  <img src="docs/screenshots/dashboard-mobile.png" alt="Mobile View" width="280" />
+  <img src="docs/screenshots/radar-mobile.png" alt="Radar Mobile" width="260" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="docs/screenshots/map-mobile.png" alt="Map Mobile" width="260" />
 </p>
 
 ## Sources
 
-| Source | Data | Scoring |
-|--------|------|---------|
-| **Hacker News** | Top 30 stories via Firebase API | Upvotes |
-| **GitHub Trending** | Trending repos in TypeScript, Python, Go, Rust | Stars gained today |
-| **Lobsters** | Top 25 stories via JSON API | Upvotes |
-| **Dev.to** | Top 30 articles of the day | Reactions |
-| **Reddit** | r/programming, r/netsec, r/devops (15 each) | Upvotes |
+| Source | Data | Scoring | Auth |
+|--------|------|---------|------|
+| **Hacker News** | Top 30 stories via Firebase API | Upvotes | None |
+| **GitHub Trending** | Trending repos in TypeScript, Python, Go, Rust | Stars gained today | None |
+| **Lobsters** | Top 25 stories via JSON API | Upvotes | None |
+| **Dev.to** | Top 30 articles of the day | Reactions | None |
+| **Reddit** | r/programming, r/netsec, r/devops (15 each) | Upvotes | None |
 
 All sources are free, require no API keys, and are fetched in parallel with independent error handling — one source failing doesn't block the others.
 
 ## Topic Categorization
 
-Stories are automatically classified into six categories using keyword and tag matching:
+Stories are automatically classified into six sectors using keyword and tag matching:
 
-| Topic | Color | What it catches |
-|-------|-------|-----------------|
-| **Security** | Red | CVEs, vulnerabilities, breaches, auth, privacy |
-| **AI / ML** | Purple | LLMs, models, training, OpenAI, Anthropic |
-| **Systems** | Blue | Compilers, kernels, databases, hardware |
-| **Dev** | Green | Languages, frameworks, libraries, web |
-| **Tools** | Yellow | DevOps, CI/CD, cloud, Docker, Kubernetes |
+| Sector | Color | What it catches |
+|--------|-------|-----------------|
+| **Security** | Red | CVEs, vulnerabilities, breaches, auth, privacy, malware |
+| **AI / ML** | Purple | LLMs, models, training, OpenAI, Anthropic, diffusion |
+| **Systems** | Blue | Compilers, kernels, databases, hardware, quantum |
+| **Dev** | Green | Languages, frameworks, libraries, frontend, backend |
+| **Tools** | Yellow | DevOps, CI/CD, cloud, Docker, Kubernetes, infrastructure |
 | **General** | Gray | Everything else |
+
+## Critical Alert Detection
+
+Stories matching security-critical patterns are automatically flagged:
+
+- CVE identifiers (`CVE-2024-XXXX`)
+- Vulnerability disclosures, exploits, zero-days
+- Ransomware, backdoors, supply chain attacks
+- Remote code execution (RCE)
+- Breaches and critical patches
+
+These appear as pulsing red dots in Radar view and trigger the **CRITICAL ALERTS DETECTED** banner.
 
 ## Tech Stack
 
@@ -76,7 +119,7 @@ Stories are automatically classified into six categories using keyword and tag m
 | Storage | [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) (JSON, 7-day rolling window) |
 | AI | [Vercel AI SDK](https://sdk.vercel.ai) + Claude Haiku (optional) |
 | Scheduling | [Vercel Cron](https://vercel.com/docs/cron-jobs) (every 15 min) |
-| Testing | [Vitest](https://vitest.dev) (59 tests, 97% coverage) |
+| Visualization | Pure SVG + CSS (no charting libraries) |
 
 ## Getting Started
 
@@ -130,7 +173,7 @@ vercel --prod
 | Configuration | Estimated Monthly Cost |
 |--------------|----------------------|
 | Without AI | **$0** — Vercel Hobby free tier covers cron + blob storage |
-| With AI (Claude Haiku) | **$3 – 5** — batch capped at 50 stories per cycle |
+| With AI (Claude Haiku) | **$3 -- 5** — batch capped at 50 stories per cycle |
 
 Set a spend limit under **Vercel > Settings > Billing > Spend Management** to avoid surprises.
 
@@ -140,18 +183,22 @@ Set a spend limit under **Vercel > Settings > Billing > Spend Management** to av
 sentinel-feed/
 ├── src/
 │   ├── app/
-│   │   ├── page.tsx                # Dashboard entry (server component)
-│   │   ├── layout.tsx              # Root layout, fonts, meta
-│   │   ├── globals.css             # Theme tokens and component styles
+│   │   ├── page.tsx                # Dashboard entry (server component + JSON-LD)
+│   │   ├── layout.tsx              # Root layout, fonts, SEO metadata
+│   │   ├── globals.css             # Theme tokens, radar animations, tooltips
+│   │   ├── robots.ts               # robots.txt generation
+│   │   ├── sitemap.ts              # sitemap.xml generation
+│   │   ├── manifest.ts             # PWA web manifest
 │   │   └── api/
 │   │       ├── fetch/route.ts      # Cron: fetch sources → AI enrich → store
 │   │       ├── stories/route.ts    # GET /api/stories — filtered story list
 │   │       ├── sources/route.ts    # GET /api/sources — source health status
 │   │       └── cleanup/route.ts    # Cron: prune blobs older than 7 days
 │   ├── components/
-│   │   ├── tactical-map.tsx        # Main dashboard — filters, views, state
-│   │   ├── sector-map.tsx          # Map view — topic sector grid
-│   │   └── story-node.tsx          # Story card — title, score, meta
+│   │   ├── tactical-map.tsx        # Main dashboard — filters, view switching
+│   │   ├── radar-view.tsx          # Radar — SVG circle, dots, sweep, tooltips
+│   │   ├── sector-map.tsx          # Map — topic grid with story cards
+│   │   └── story-node.tsx          # List — story card with score + meta
 │   └── lib/
 │       ├── fetchers/
 │       │   ├── index.ts            # Parallel fetcher orchestration + dedup
@@ -165,13 +212,17 @@ sentinel-feed/
 │       ├── topics.ts               # Keyword-based topic classification
 │       ├── types.ts                # Shared TypeScript interfaces
 │       └── utils.ts                # Date formatting, URL normalization
+├── public/
+│   └── og-image.png               # Open Graph preview image
+├── scripts/
+│   └── screenshots.mjs            # Playwright screenshot automation
 ├── vercel.json                     # Cron job schedules
 └── vitest.config.ts                # Test runner configuration
 ```
 
 ## Adding a Source
 
-Sentinel Feed is designed to make adding sources straightforward. Each source is a single file that returns `Story[]`.
+Each source is a single file that returns `Story[]`:
 
 1. Create `src/lib/fetchers/your-source.ts` — export an async function returning `Promise<Story[]>`
 2. Add your source ID to the `SourceId` union in `src/lib/types.ts`
@@ -182,17 +233,9 @@ Sentinel Feed is designed to make adding sources straightforward. Each source is
 
 See any existing fetcher (e.g., `lobsters.ts`) as a reference — most are under 60 lines.
 
-## Testing
-
-```bash
-npm test              # Run all 59 tests
-npm run test:watch    # Watch mode
-npm run test:coverage # Coverage report (97%+)
-```
-
 ## Contributing
 
-Contributions are welcome. To get started:
+Contributions are welcome:
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feat/my-source`)

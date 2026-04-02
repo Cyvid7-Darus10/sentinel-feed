@@ -4,6 +4,7 @@ import { useState, useMemo, useRef, useCallback } from 'react';
 import type { Story } from '@/lib/types';
 import type { Topic } from '@/lib/topics';
 import { TOPICS, categorizeTopic } from '@/lib/topics';
+import { getSourceConfig, formatScore } from '@/lib/sources';
 import { relativeTime } from '@/lib/utils';
 
 interface RadarViewProps {
@@ -17,35 +18,6 @@ const CRITICAL_PATTERN =
 function isCritical(story: Story): boolean {
   const text = `${story.title} ${story.summary ?? ''} ${story.description ?? ''}`;
   return CRITICAL_PATTERN.test(text);
-}
-
-function sourceBadgeLabel(source: string): string {
-  switch (source) {
-    case 'hackernews': return 'HN';
-    case 'github-trending': return 'GH';
-    case 'lobsters': return 'LO';
-    case 'devto': return 'DEV';
-    case 'reddit': return 'RD';
-    default: return source.slice(0, 2).toUpperCase();
-  }
-}
-
-function sourceBadgeClass(source: string): string {
-  switch (source) {
-    case 'hackernews': return 'badge-hn';
-    case 'github-trending': return 'badge-gh';
-    case 'lobsters': return 'badge-lo';
-    case 'devto': return 'badge-dev';
-    case 'reddit': return 'badge-rd';
-    default: return 'bg-info text-black';
-  }
-}
-
-function scoreLabel(story: Story): string | null {
-  if (story.score === null || story.score === 0) return null;
-  if (story.source === 'github-trending') return `${story.score.toLocaleString()}\u2605`;
-  if (story.source === 'devto') return `${story.score.toLocaleString()}\u2764`;
-  return `${story.score.toLocaleString()} pts`;
 }
 
 // ── Seeded PRNG for deterministic but random-looking placement ──
@@ -204,7 +176,8 @@ function TooltipContent({
   readonly story: Story;
   readonly topicColor: string;
 }) {
-  const score = scoreLabel(story);
+  const src = getSourceConfig(story.source);
+  const score = formatScore(story.source, story.score);
   return (
     <div className="radar-tooltip-inner" style={{ borderColor: topicColor }}>
       <p className="text-[13px] font-medium leading-snug text-text-bright">
@@ -216,8 +189,8 @@ function TooltipContent({
         </p>
       )}
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-text-muted">
-        <span className={`badge ${sourceBadgeClass(story.source)}`}>
-          {sourceBadgeLabel(story.source)}
+        <span className={`badge ${src.badgeClass}`}>
+          {src.badge}
         </span>
         {story.author && <span>{story.author}</span>}
         <span>{relativeTime(story.publishedAt ?? story.fetchedAt)}</span>

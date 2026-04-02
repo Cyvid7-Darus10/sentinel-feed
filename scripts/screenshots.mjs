@@ -1,75 +1,67 @@
-import puppeteer from 'puppeteer';
+import { chromium } from 'playwright';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(__dirname, '..', 'docs', 'screenshots');
-const URL = 'https://sentinel-feed.pastelero.ph';
-
-async function wait(ms) {
-  return new Promise((r) => setTimeout(r, ms));
-}
+const SITE = 'https://sentinel-feed.pastelero.ph';
 
 async function main() {
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
+  const browser = await chromium.launch();
 
-  // 1. Full dashboard — desktop (map view)
-  const desktop = await browser.newPage();
-  await desktop.setViewport({ width: 1440, height: 900, deviceScaleFactor: 2 });
-  await desktop.goto(URL, { waitUntil: 'networkidle2', timeout: 30000 });
-  await wait(2000);
-  await desktop.screenshot({
-    path: path.join(OUT, 'dashboard-desktop.png'),
-    fullPage: false,
+  // ── Desktop (1440x900, 2x) ──
+  const ctx = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    deviceScaleFactor: 2,
   });
-  console.log('✓ dashboard-desktop.png');
+  const page = await ctx.newPage();
+  await page.goto(SITE, { waitUntil: 'networkidle', timeout: 30000 });
+  await page.waitForTimeout(3000);
 
-  // 2. List view — click LIST button
-  const listBtns = await desktop.$$('header button');
-  for (const btn of listBtns) {
-    const text = await btn.evaluate((el) => el.textContent?.trim());
-    if (text === 'LIST') {
-      await btn.click();
-      break;
-    }
-  }
-  await wait(1000);
-  await desktop.screenshot({
-    path: path.join(OUT, 'list-view.png'),
-    fullPage: false,
-  });
-  console.log('✓ list-view.png');
+  // 1. Radar view (default)
+  await page.screenshot({ path: path.join(OUT, 'radar-desktop.png') });
+  console.log('✓ radar-desktop.png');
 
-  // 3. Topic-filtered list — click a topic tab (e.g., AI / ML)
-  const topicBtns = await desktop.$$('nav button, header button');
-  for (const btn of topicBtns) {
-    const text = await btn.evaluate((el) => el.textContent?.trim());
-    if (text && text.includes('AI')) {
-      await btn.click();
-      break;
-    }
-  }
-  await wait(800);
-  await desktop.screenshot({
-    path: path.join(OUT, 'topic-filter.png'),
-    fullPage: false,
-  });
+  // 2. Map view
+  await page.click('button:has-text("MAP")');
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: path.join(OUT, 'map-desktop.png') });
+  console.log('✓ map-desktop.png');
+
+  // 3. List view
+  await page.click('button:has-text("LIST")');
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: path.join(OUT, 'list-desktop.png') });
+  console.log('✓ list-desktop.png');
+
+  // 4. Topic filter (AI/ML)
+  await page.click('nav button:has-text("AI")');
+  await page.waitForTimeout(800);
+  await page.screenshot({ path: path.join(OUT, 'topic-filter.png') });
   console.log('✓ topic-filter.png');
 
-  // 4. Mobile view (map)
-  const mobile = await browser.newPage();
-  await mobile.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
-  await mobile.goto(URL, { waitUntil: 'networkidle2', timeout: 30000 });
-  await wait(2000);
-  await mobile.screenshot({
-    path: path.join(OUT, 'dashboard-mobile.png'),
-    fullPage: false,
-  });
-  console.log('✓ dashboard-mobile.png');
+  await ctx.close();
 
+  // ── Mobile (390x844, 2x) ──
+  const mCtx = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 2,
+  });
+  const mPage = await mCtx.newPage();
+  await mPage.goto(SITE, { waitUntil: 'networkidle', timeout: 30000 });
+  await mPage.waitForTimeout(3000);
+
+  // 5. Radar mobile
+  await mPage.screenshot({ path: path.join(OUT, 'radar-mobile.png') });
+  console.log('✓ radar-mobile.png');
+
+  // 6. Map mobile
+  await mPage.click('button:has-text("MAP")');
+  await mPage.waitForTimeout(1500);
+  await mPage.screenshot({ path: path.join(OUT, 'map-mobile.png') });
+  console.log('✓ map-mobile.png');
+
+  await mCtx.close();
   await browser.close();
   console.log('\nAll screenshots saved to docs/screenshots/');
 }

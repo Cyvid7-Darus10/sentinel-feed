@@ -8,6 +8,7 @@ import {
   writeSourceHealth,
 } from '@/lib/storage';
 import type { SourceHealth, Story } from '@/lib/types';
+import { getSourceDisplayName } from '@/lib/sources';
 
 // Allow up to 60s for fetching all sources + AI enrichment
 export const maxDuration = 60;
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
     for (const result of results) {
       const sourceStories = relevant.filter((s) => s.source === result.source);
       updatedSources[result.source] = {
-        name: sourceDisplayName(result.source),
+        name: getSourceDisplayName(result.source),
         lastFetchAt: new Date().toISOString(),
         lastFetchCount: sourceStories.length,
         status: result.error ? 'error' : 'healthy',
@@ -89,12 +90,3 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function sourceDisplayName(source: string): string {
-  const names: Record<string, string> = {
-    hackernews: 'Hacker News',
-    'github-trending': 'GitHub Trending',
-    lobsters: 'Lobsters',
-    devto: 'Dev.to',
-  };
-  return names[source] ?? source;
-}

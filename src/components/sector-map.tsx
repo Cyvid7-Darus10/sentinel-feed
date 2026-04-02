@@ -1,53 +1,13 @@
 import type { Story } from '@/lib/types';
 import type { Topic } from '@/lib/topics';
 import { TOPICS, categorizeTopic } from '@/lib/topics';
+import { getSourceConfig, formatScore } from '@/lib/sources';
 import { relativeTime } from '@/lib/utils';
 import { useMemo } from 'react';
 
 interface SectorMapProps {
   readonly stories: readonly Story[];
   readonly onSelectTopic: (topicId: string) => void;
-}
-
-function sourceBadgeClass(source: string): string {
-  switch (source) {
-    case 'hackernews':
-      return 'badge-hn';
-    case 'github-trending':
-      return 'badge-gh';
-    case 'lobsters':
-      return 'badge-lo';
-    case 'devto':
-      return 'badge-dev';
-    case 'reddit':
-      return 'badge-rd';
-    default:
-      return 'bg-info text-black';
-  }
-}
-
-function sourceBadgeLabel(source: string): string {
-  switch (source) {
-    case 'hackernews':
-      return 'HN';
-    case 'github-trending':
-      return 'GH';
-    case 'lobsters':
-      return 'LO';
-    case 'devto':
-      return 'DEV';
-    case 'reddit':
-      return 'RD';
-    default:
-      return source.slice(0, 2).toUpperCase();
-  }
-}
-
-function scoreLabel(story: Story): string | null {
-  if (story.score === null || story.score === 0) return null;
-  if (story.source === 'github-trending') return `${story.score.toLocaleString()}\u2605`;
-  if (story.source === 'devto') return `${story.score.toLocaleString()}\u2764`;
-  return `${story.score.toLocaleString()}`;
 }
 
 function Sector({
@@ -92,7 +52,8 @@ function Sector({
       {/* Story List */}
       <div className="flex-1 overflow-y-auto">
         {topStories.map((story) => {
-          const score = scoreLabel(story);
+          const src = getSourceConfig(story.source);
+          const score = formatScore(story.source, story.score);
           return (
             <div key={story.id} className="story-tooltip-wrap relative">
               <a
@@ -102,9 +63,9 @@ function Sector({
                 className="flex items-start gap-2 border-b border-border/50 px-3 py-2.5 transition-colors hover:bg-bg-hover sm:py-2"
               >
                 <span
-                  className={`badge mt-0.5 shrink-0 ${sourceBadgeClass(story.source)}`}
+                  className={`badge mt-0.5 shrink-0 ${src.badgeClass}`}
                 >
-                  {sourceBadgeLabel(story.source)}
+                  {src.badge}
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="line-clamp-2 text-[13px] leading-snug text-text-bright sm:truncate sm:text-[12px]">
@@ -134,8 +95,8 @@ function Sector({
                   </p>
                 )}
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-text-muted">
-                  <span className={`badge ${sourceBadgeClass(story.source)}`}>
-                    {sourceBadgeLabel(story.source)}
+                  <span className={`badge ${src.badgeClass}`}>
+                    {src.badge}
                   </span>
                   {story.author && <span>{story.author}</span>}
                   <span>{relativeTime(story.publishedAt ?? story.fetchedAt)}</span>
