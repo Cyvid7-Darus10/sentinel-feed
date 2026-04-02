@@ -226,21 +226,13 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
   const plotted = useMemo(() => plotStories(stories, cx, cy, outerR), [stories, cx, cy, outerR]);
   const criticalCount = useMemo(() => plotted.filter((p) => p.critical).length, [plotted]);
 
-  const handleDotInteract = useCallback(
-    (p: PlottedStory, e: React.MouseEvent | React.TouchEvent) => {
-      // On touch, toggle; on mouse, show
-      if (hoveredStory?.story.id === p.story.id && 'touches' in e) {
-        setHoveredStory(null);
-        return;
-      }
+  const handleDotHover = useCallback(
+    (p: PlottedStory, e: React.MouseEvent) => {
       setHoveredStory(p);
       const rect = containerRef.current?.getBoundingClientRect();
       if (rect) {
-        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-        const rawX = clientX - rect.left + 16;
-        const rawY = clientY - rect.top - 12;
-        // Clamp tooltip within container
+        const rawX = e.clientX - rect.left + 16;
+        const rawY = e.clientY - rect.top - 12;
         const maxX = rect.width - 320;
         setTooltipPos({
           x: Math.max(8, Math.min(rawX, maxX)),
@@ -248,12 +240,39 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
         });
       }
     },
-    [hoveredStory]
+    []
   );
 
   const handleDotLeave = useCallback(() => {
     setHoveredStory(null);
   }, []);
+
+  const handleDotTap = useCallback(
+    (p: PlottedStory, e: React.TouchEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (hoveredStory?.story.id === p.story.id) {
+        // Second tap on same story → navigate
+        if (isSafeUrl(p.story.url)) {
+          window.open(p.story.url, '_blank', 'noopener,noreferrer');
+        }
+        setHoveredStory(null);
+        return;
+      }
+      // First tap → show tooltip
+      setHoveredStory(p);
+    },
+    [hoveredStory]
+  );
+
+  const handleDotClick = useCallback(
+    (p: PlottedStory) => {
+      if (isSafeUrl(p.story.url)) {
+        window.open(p.story.url, '_blank', 'noopener,noreferrer');
+      }
+    },
+    []
+  );
 
   const sectorAngle = (2 * Math.PI) / TOPICS.length;
 
@@ -273,7 +292,7 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
   });
 
   return (
-    <div ref={containerRef} className="relative flex h-full items-center justify-center overflow-hidden bg-bg-base">
+    <div ref={containerRef} className="relative flex h-full items-center justify-center overflow-hidden bg-bg-base" onTouchStart={() => setHoveredStory(null)}>
       {/* CRT scanline overlay */}
       <div className="radar-scanlines pointer-events-none absolute inset-0 z-[1]" />
       {/* Vignette */}
@@ -435,26 +454,33 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
                 opacity={p.critical ? 1 : 0.5}
                 className={p.critical ? 'radar-pulse' : ''}
               />
-              {/* The dot */}
-              <a href={isSafeUrl(p.story.url) ? p.story.url : '#'} target="_blank" rel="noopener noreferrer">
-                <circle
-                  cx={p.x}
-                  cy={p.y}
-                  r={p.dotR}
-                  fill={p.critical ? '#f87171' : p.topicColor}
-                  stroke={p.critical ? '#fca5a5' : `${p.topicColor}80`}
-                  strokeWidth={p.critical ? 1.5 : 0.5}
-                  className="radar-dot cursor-pointer"
-                  style={{
-                    animationDelay: `${blinkDelay}s`,
-                    filter: p.critical ? 'drop-shadow(0 0 6px #f87171)' : `drop-shadow(0 0 2px ${p.topicColor})`,
-                    '--dot-color': p.critical ? '#f87171' : p.topicColor,
-                  } as React.CSSProperties}
-                  onMouseEnter={(e) => handleDotInteract(p, e)}
-                  onMouseLeave={handleDotLeave}
-                  onTouchStart={(e) => { e.preventDefault(); handleDotInteract(p, e); }}
-                />
-              </a>
+              {/* Invisible larger touch target for mobile */}
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={Math.max(p.dotR * 3, 18)}
+                fill="transparent"
+                className="cursor-pointer"
+                onTouchStart={(e) => handleDotTap(p, e)}
+                onClick={() => handleDotClick(p)}
+                onMouseEnter={(e) => handleDotHover(p, e)}
+                onMouseLeave={handleDotLeave}
+              />
+              {/* The visible dot */}
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={p.dotR}
+                fill={p.critical ? '#f87171' : p.topicColor}
+                stroke={p.critical ? '#fca5a5' : `${p.topicColor}80`}
+                strokeWidth={p.critical ? 1.5 : 0.5}
+                className="radar-dot pointer-events-none"
+                style={{
+                  animationDelay: `${blinkDelay}s`,
+                  filter: p.critical ? 'drop-shadow(0 0 6px #f87171)' : `drop-shadow(0 0 2px ${p.topicColor})`,
+                  '--dot-color': p.critical ? '#f87171' : p.topicColor,
+                } as React.CSSProperties}
+              />
             </g>
           );
         })}
