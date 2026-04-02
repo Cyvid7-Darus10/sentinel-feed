@@ -1,3 +1,5 @@
+'use client';
+
 import type { Story } from '@/lib/types';
 import type { Topic } from '@/lib/topics';
 import { TOPICS, categorizeStories } from '@/lib/topics';
