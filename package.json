@@ -12,7 +12,6 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@ai-sdk/react": "^3.0.144",
     "@vercel/blob": "^2.3.2",
     "ai": "^6.0.142",
     "cheerio": "^1.2.0",

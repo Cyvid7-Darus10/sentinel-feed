@@ -18,9 +18,9 @@ export function daysAgoKeys(days: number): readonly string[] {
 }
 
 export function relativeTime(isoDate: string): string {
-  const now = Date.now();
   const then = new Date(isoDate).getTime();
-  const diffMs = now - then;
+  if (Number.isNaN(then)) return 'unknown';
+  const diffMs = Math.max(0, Date.now() - then);
   const diffMin = Math.floor(diffMs / 60_000);
 
   if (diffMin < 1) return 'just now';

@@ -2,10 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readStoriesForDays } from '@/lib/storage';
 import type { SourceId } from '@/lib/types';
 
+const VALID_SOURCES = new Set<string>(['hackernews', 'github-trending']);
+
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
-  const source = searchParams.get('source') as SourceId | null;
-  const days = Math.min(parseInt(searchParams.get('days') ?? '1', 10), 7);
+
+  const rawSource = searchParams.get('source');
+  const source: SourceId | null =
+    rawSource && VALID_SOURCES.has(rawSource) ? (rawSource as SourceId) : null;
+
+  const rawDays = parseInt(searchParams.get('days') ?? '1', 10);
+  const days = Number.isNaN(rawDays) ? 1 : Math.min(Math.max(rawDays, 1), 7);
 
   const stories = await readStoriesForDays(days);
 

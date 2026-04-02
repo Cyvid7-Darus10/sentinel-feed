@@ -101,6 +101,14 @@ describe('relativeTime', () => {
     expect(relativeTime('2026-04-04T12:00:00Z')).toBe('1d ago');
     expect(relativeTime('2026-04-02T12:00:00Z')).toBe('3d ago');
   });
+
+  it('returns "unknown" for invalid date string', () => {
+    expect(relativeTime('not-a-date')).toBe('unknown');
+  });
+
+  it('returns "just now" for future dates (clamped to 0)', () => {
+    expect(relativeTime('2026-04-06T12:00:00Z')).toBe('just now');
+  });
 });
 
 describe('normalizeUrl', () => {

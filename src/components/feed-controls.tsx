@@ -53,6 +53,7 @@ export function FeedControls({
           <button
             key={s.id ?? 'all'}
             onClick={() => onSourceChange(s.id)}
+            aria-pressed={activeSource === s.id}
             className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors ${
               activeSource === s.id
                 ? 'bg-text-bright text-bg-base'
@@ -71,6 +72,7 @@ export function FeedControls({
           <button
             key={t.id}
             onClick={() => onTimeRangeChange(t.id)}
+            aria-pressed={activeRange === t.id}
             className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors ${
               activeRange === t.id
                 ? 'bg-text-bright text-bg-base'
@@ -84,8 +86,9 @@ export function FeedControls({
 
       {/* Search */}
       <div className="flex items-center gap-2">
-        <span className="text-[10px] uppercase text-text-muted">Find</span>
+        <label htmlFor="story-search" className="text-[10px] uppercase text-text-muted">Find</label>
         <input
+          id="story-search"
           type="text"
           value={searchValue}
           onChange={handleSearch}

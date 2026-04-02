@@ -9,10 +9,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const deleted = await deleteOldBlobs(RETENTION_DAYS);
+  try {
+    const deleted = await deleteOldBlobs(RETENTION_DAYS);
 
-  return NextResponse.json({
-    deleted: deleted.length,
-    paths: deleted,
-  });
+    return NextResponse.json({
+      deleted: deleted.length,
+      paths: deleted,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Internal error';
+    console.error('[cleanup] Failed:', message);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

@@ -26,10 +26,10 @@ export async function fetchAllSources(
     })
   );
 
-  return results.map((r) =>
+  return results.map((r, i) =>
     r.status === 'fulfilled'
       ? r.value
-      : { source: 'hackernews', stories: [], error: 'Fetch failed' }
+      : { source: fetchers[i].source, stories: [], error: 'Fetch failed' }
   );
 }
 

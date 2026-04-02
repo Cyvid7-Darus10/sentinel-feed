@@ -1,4 +1,4 @@
-import { list, put, del, head } from '@vercel/blob';
+import { list, put, del, head, type ListBlobResult } from '@vercel/blob';
 import type { Story, SourceHealth } from './types';
 import { todayKey, daysAgoKeys } from './utils';
 
@@ -76,10 +76,17 @@ export async function deleteOldBlobs(retentionDays: number): Promise<string[]> {
   cutoff.setDate(cutoff.getDate() - retentionDays);
   const cutoffKey = cutoff.toISOString().slice(0, 10);
 
-  const { blobs } = await list({ prefix: FEED_PREFIX });
+  const allBlobs: ListBlobResult['blobs'] = [];
+  let cursor: string | undefined;
+  do {
+    const page = await list({ prefix: FEED_PREFIX, cursor });
+    allBlobs.push(...page.blobs);
+    cursor = page.hasMore ? page.cursor : undefined;
+  } while (cursor);
+
   const toDelete: string[] = [];
 
-  for (const blob of blobs) {
+  for (const blob of allBlobs) {
     const dateMatch = blob.pathname.match(/(\d{4}-\d{2}-\d{2})\.json$/);
     if (dateMatch && dateMatch[1] < cutoffKey) {
       toDelete.push(blob.url);
