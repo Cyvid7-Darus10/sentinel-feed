@@ -126,6 +126,40 @@ body {
   border-color: var(--text-muted);
 }
 
+/* ── Sector Map Grid ── */
+.sector-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--border);
+}
+
+@media (max-width: 1024px) {
+  .sector-grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .sector-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    overflow-y: auto;
+  }
+
+  .sector-card {
+    max-height: 280px;
+  }
+}
+
+.sector-card {
+  background: var(--bg-primary);
+  border-top: 2px solid var(--sector-color, var(--border));
+  overflow: hidden;
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }

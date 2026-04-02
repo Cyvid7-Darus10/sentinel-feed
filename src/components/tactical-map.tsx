@@ -5,6 +5,9 @@ import type { Story, SourceId, SourceHealth } from '@/lib/types';
 import { TOPICS, categorizeStories } from '@/lib/topics';
 import { relativeTime } from '@/lib/utils';
 import { StoryNode } from './story-node';
+import { SectorMap } from './sector-map';
+
+type ViewMode = 'list' | 'map';
 
 type TimeRange = '6h' | '12h' | '24h' | '7d';
 
@@ -53,6 +56,7 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
   const [activeRange, setActiveRange] = useState<TimeRange>('24h');
   const [activeTopic, setActiveTopic] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('map');
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -135,6 +139,11 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
     [activeTopic, categorized]
   );
 
+  const handleSelectTopic = useCallback((topicId: string) => {
+    setActiveTopic(topicId);
+    setViewMode('list');
+  }, []);
+
   const sourceCount = Object.keys(health.sources).length;
   const lastUpdate = health.updatedAt ? relativeTime(health.updatedAt) : null;
 
@@ -180,6 +189,26 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
           ))}
         </div>
 
+        {/* View Toggle */}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setViewMode('map')}
+            aria-pressed={viewMode === 'map'}
+            className={`filter-btn ${viewMode === 'map' ? 'filter-btn-active' : 'filter-btn-inactive'}`}
+            title="Sector map view"
+          >
+            MAP
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            aria-pressed={viewMode === 'list'}
+            className={`filter-btn ${viewMode === 'list' ? 'filter-btn-active' : 'filter-btn-inactive'}`}
+            title="List view"
+          >
+            LIST
+          </button>
+        </div>
+
         {/* Search */}
         <input
           type="text"
@@ -206,49 +235,59 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
         </div>
       </header>
 
-      {/* ── Topic Tabs ── */}
-      <nav className="flex gap-0 overflow-x-auto border-b border-border bg-bg-primary px-3">
-        <button
-          onClick={() => setActiveTopic(null)}
-          className={`topic-tab ${!activeTopic ? 'topic-tab-active' : ''}`}
-          style={{ '--tab-color': '#34d399' } as React.CSSProperties}
-        >
-          ALL
-          <span className="ml-1.5 text-[10px] opacity-50">{filtered.length}</span>
-        </button>
-        {TOPICS.map((topic) => (
-          <button
-            key={topic.id}
-            onClick={() => setActiveTopic(activeTopic === topic.id ? null : topic.id)}
-            className={`topic-tab ${activeTopic === topic.id ? 'topic-tab-active' : ''}`}
-            style={{ '--tab-color': topic.color } as React.CSSProperties}
-          >
-            {topic.label}
-            <span className="ml-1.5 text-[10px] opacity-50">
-              {topicCounts[topic.id] ?? 0}
-            </span>
-          </button>
-        ))}
-      </nav>
+      {viewMode === 'list' && (
+        <>
+          {/* ── Topic Tabs ── */}
+          <nav className="flex gap-0 overflow-x-auto border-b border-border bg-bg-primary px-3">
+            <button
+              onClick={() => setActiveTopic(null)}
+              className={`topic-tab ${!activeTopic ? 'topic-tab-active' : ''}`}
+              style={{ '--tab-color': '#34d399' } as React.CSSProperties}
+            >
+              ALL
+              <span className="ml-1.5 text-[10px] opacity-50">{filtered.length}</span>
+            </button>
+            {TOPICS.map((topic) => (
+              <button
+                key={topic.id}
+                onClick={() => setActiveTopic(activeTopic === topic.id ? null : topic.id)}
+                className={`topic-tab ${activeTopic === topic.id ? 'topic-tab-active' : ''}`}
+                style={{ '--tab-color': topic.color } as React.CSSProperties}
+              >
+                {topic.label}
+                <span className="ml-1.5 text-[10px] opacity-50">
+                  {topicCounts[topic.id] ?? 0}
+                </span>
+              </button>
+            ))}
+          </nav>
 
-      {/* ── Story Feed ── */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-3xl">
-          {displayStories.length === 0 ? (
-            <div className="px-5 py-16 text-center text-[12px] text-text-muted">
-              No stories match the current filters.
+          {/* ── Story Feed ── */}
+          <main className="flex-1 overflow-y-auto">
+            <div className="mx-auto max-w-3xl">
+              {displayStories.length === 0 ? (
+                <div className="px-5 py-16 text-center text-[12px] text-text-muted">
+                  No stories match the current filters.
+                </div>
+              ) : (
+                displayStories.map((story) => (
+                  <StoryNode
+                    key={story.id}
+                    story={story}
+                    topicColor={getTopicColor(story)}
+                  />
+                ))
+              )}
             </div>
-          ) : (
-            displayStories.map((story) => (
-              <StoryNode
-                key={story.id}
-                story={story}
-                topicColor={getTopicColor(story)}
-              />
-            ))
-          )}
-        </div>
-      </main>
+          </main>
+        </>
+      )}
+
+      {viewMode === 'map' && (
+        <main className="flex-1 overflow-hidden">
+          <SectorMap stories={filtered} onSelectTopic={handleSelectTopic} />
+        </main>
+      )}
 
       {/* ── Footer ── */}
       <footer className="border-t border-border bg-bg-primary px-5 py-1.5 text-center text-[10px] text-text-muted">
