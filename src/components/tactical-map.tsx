@@ -50,6 +50,18 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
   const [activeTopic, setActiveTopic] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('radar');
+  const [showBanner, setShowBanner] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !localStorage.getItem('sentinel-banner-dismissed')) {
+      setShowBanner(true);
+    }
+  }, []);
+
+  const dismissBanner = useCallback(() => {
+    setShowBanner(false);
+    localStorage.setItem('sentinel-banner-dismissed', '1');
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -251,6 +263,27 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
           />
         </div>
       </header>
+
+      {/* ── macOS App Banner ── */}
+      {showBanner && (
+        <div className="flex items-center justify-between gap-3 border-b border-border bg-bg-panel px-4 py-2">
+          <div className="flex items-center gap-3 text-[11px]">
+            <span className="text-[13px]">&#x1F4E1;</span>
+            <span className="text-text-secondary">
+              <span className="font-semibold text-text-bright">Sentinel Bar</span>
+              {' '}— native macOS menu bar app. Get tech news at a glance without opening your browser.
+              <span className="ml-1 text-warning">Coming soon</span>
+            </span>
+          </div>
+          <button
+            onClick={dismissBanner}
+            className="shrink-0 text-[11px] text-text-muted transition-colors hover:text-text-secondary"
+            aria-label="Dismiss banner"
+          >
+            &#x2715;
+          </button>
+        </div>
+      )}
 
       {viewMode === 'list' && (
         <>
