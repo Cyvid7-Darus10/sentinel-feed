@@ -9,7 +9,7 @@ import {
 } from '@/lib/storage';
 import type { SourceHealth, Story } from '@/lib/types';
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('Authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
