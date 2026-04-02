@@ -9,15 +9,30 @@ import {
 } from '@/lib/storage';
 import type { SourceHealth, Story } from '@/lib/types';
 
+// Allow up to 60s for fetching all sources + AI enrichment
+export const maxDuration = 60;
+
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('Authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  console.log('[fetch] Cron invoked at', new Date().toISOString());
+
+  const cronSecret = process.env.CRON_SECRET;
+  const authHeader = request.headers.get('authorization');
+
+  if (!cronSecret) {
+    console.error('[fetch] CRON_SECRET env var is not set');
+    return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
+  }
+
+  if (authHeader !== `Bearer ${cronSecret}`) {
+    console.warn('[fetch] Auth failed — received:', authHeader?.slice(0, 20) ?? 'none');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
+    console.log('[fetch] Auth passed, starting pipeline');
     const existing = await readTodayStories();
     const existingUrls = buildExistingUrlSet(existing);
+    console.log('[fetch] Existing stories:', existing.length);
 
     const results = await fetchAllSources(existingUrls);
 
@@ -55,18 +70,22 @@ export async function GET(request: NextRequest) {
     };
     await writeSourceHealth(updatedHealth);
 
-    return NextResponse.json({
+    const response = {
       fetched: allNew.length,
       relevant: relevant.length,
       total: merged.length,
       sources: Object.fromEntries(
         results.map((r) => [r.source, { count: r.stories.length, error: r.error }])
       ),
-    });
+    };
+
+    console.log('[fetch] Done:', JSON.stringify(response));
+    return NextResponse.json(response);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal error';
-    console.error('[fetch] Pipeline failed:', message);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const stack = err instanceof Error ? err.stack : undefined;
+    console.error('[fetch] Pipeline failed:', message, stack);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

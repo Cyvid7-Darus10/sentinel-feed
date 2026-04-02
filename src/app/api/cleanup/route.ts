@@ -3,9 +3,18 @@ import { deleteOldBlobs } from '@/lib/storage';
 
 const RETENTION_DAYS = 7;
 
+export const maxDuration = 30;
+
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('Authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const cronSecret = process.env.CRON_SECRET;
+  const authHeader = request.headers.get('authorization');
+
+  if (!cronSecret) {
+    console.error('[cleanup] CRON_SECRET env var is not set');
+    return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
+  }
+
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
