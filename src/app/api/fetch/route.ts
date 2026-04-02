@@ -17,7 +17,7 @@ export const maxDuration = 60;
 export async function GET(request: NextRequest) {
   console.log('[fetch] Cron invoked at', new Date().toISOString());
 
-  const authError = verifyCronAuth(request);
+  const authError = verifyCronAuth(request, 'fetch');
   if (authError) return authError;
 
   try {

@@ -6,7 +6,7 @@ import { RETENTION_DAYS } from '@/lib/config';
 export const maxDuration = 30;
 
 export async function GET(request: NextRequest) {
-  const authError = verifyCronAuth(request);
+  const authError = verifyCronAuth(request, 'cleanup');
   if (authError) return authError;
 
   try {
