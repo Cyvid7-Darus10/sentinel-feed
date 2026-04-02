@@ -95,7 +95,6 @@ function sourceDisplayName(source: string): string {
     'github-trending': 'GitHub Trending',
     lobsters: 'Lobsters',
     devto: 'Dev.to',
-    reddit: 'Reddit',
   };
   return names[source] ?? source;
 }

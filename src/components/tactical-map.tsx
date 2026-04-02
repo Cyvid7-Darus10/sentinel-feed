@@ -40,7 +40,6 @@ const SOURCES: readonly { id: SourceId | null; label: string }[] = [
   { id: 'github-trending', label: 'GH' },
   { id: 'lobsters', label: 'LO' },
   { id: 'devto', label: 'DEV' },
-  { id: 'reddit', label: 'RD' },
 ];
 
 const TIME_RANGES: readonly { id: TimeRange; label: string }[] = [

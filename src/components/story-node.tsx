@@ -16,8 +16,6 @@ function sourceBadge(source: string): { label: string; className: string } {
       return { label: 'LO', className: 'badge-lo' };
     case 'devto':
       return { label: 'DEV', className: 'badge-dev' };
-    case 'reddit':
-      return { label: 'RD', className: 'badge-rd' };
     default:
       return { label: source.slice(0, 2).toUpperCase(), className: 'bg-info text-black' };
   }
