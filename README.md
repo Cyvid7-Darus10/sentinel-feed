@@ -240,6 +240,20 @@ Each source is a single file that returns `Story[]`:
 
 See any existing fetcher (e.g., `lobsters.ts`) as a reference — most are under 60 lines.
 
+## Sentinel Bar — macOS Menu Bar App
+
+> Coming soon to the Mac App Store
+
+Native macOS menu bar companion that puts your tech feed one click away.
+
+- **Menu bar icon** with live critical alert count
+- **Native feed** — SwiftUI list with critical alerts section, story cards, source badges, and scores
+- **Embedded dashboard** — full radar/map view in a WebView tab
+- **Background polling** — refreshes every 5 minutes
+- **Critical notifications** — native macOS alerts for CVEs and vulnerabilities
+- **Dark theme** — monospaced Palantir aesthetic matching the web app
+- **Lightweight** — pure Swift, no Electron, under 5 MB
+
 ## Contributing
 
 Contributions are welcome:
