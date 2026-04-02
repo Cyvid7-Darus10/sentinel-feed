@@ -32,11 +32,16 @@ export async function fetchReddit(): Promise<Story[]> {
     SUBREDDITS.map((sub) => fetchSubreddit(sub))
   );
 
+  const errors: string[] = [];
   const seen = new Set<string>();
   const stories: Story[] = [];
 
-  for (const result of results) {
-    if (result.status !== 'fulfilled') continue;
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+    if (result.status === 'rejected') {
+      errors.push(`r/${SUBREDDITS[i]}: ${result.reason}`);
+      continue;
+    }
     for (const story of result.value) {
       if (seen.has(story.url)) continue;
       seen.add(story.url);
@@ -44,25 +49,45 @@ export async function fetchReddit(): Promise<Story[]> {
     }
   }
 
+  // If ALL subreddits failed, throw so the error is visible in source health
+  if (stories.length === 0 && errors.length > 0) {
+    throw new Error(errors.join('; '));
+  }
+
+  if (errors.length > 0) {
+    console.warn('[reddit] Partial failures:', errors.join('; '));
+  }
+
   return stories;
 }
 
 async function fetchSubreddit(subreddit: string): Promise<Story[]> {
+  // Use old.reddit.com — less aggressive with cloud IP blocking
   const res = await fetch(
-    `https://www.reddit.com/r/${subreddit}/top.json?limit=${PER_SUBREDDIT}&t=day`,
+    `https://old.reddit.com/r/${subreddit}/top.json?limit=${PER_SUBREDDIT}&t=day`,
     {
       headers: {
-        'User-Agent': 'SentinelFeed/1.0',
+        'User-Agent': 'SentinelFeed/1.0 (tech news aggregator)',
         Accept: 'application/json',
       },
     }
   );
 
   if (!res.ok) {
-    throw new Error(`Reddit r/${subreddit}: ${res.status}`);
+    const body = await res.text().catch(() => '');
+    throw new Error(
+      `r/${subreddit}: HTTP ${res.status}${body.includes('<!') ? ' (HTML — likely blocked)' : ''}`
+    );
   }
 
-  const listing: RedditListing = await res.json();
+  const text = await res.text();
+
+  // Reddit sometimes returns HTML (captcha/block page) with a 200 status
+  if (text.startsWith('<!') || text.startsWith('<html')) {
+    throw new Error(`r/${subreddit}: received HTML instead of JSON (blocked)`);
+  }
+
+  const listing: RedditListing = JSON.parse(text);
   const stories: Story[] = [];
 
   for (const post of listing.data.children) {
