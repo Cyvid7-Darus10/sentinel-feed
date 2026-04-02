@@ -17,16 +17,22 @@ vi.mock('../devto', () => ({
   fetchDevto: vi.fn(),
 }));
 
+vi.mock('../dailydev', () => ({
+  fetchDailyDev: vi.fn(),
+}));
+
 import { fetchAllSources, buildExistingUrlSet } from '../index';
 import { fetchHackerNews } from '../hackernews';
 import { fetchGithubTrending } from '../github-trending';
 import { fetchLobsters } from '../lobsters';
 import { fetchDevto } from '../devto';
+import { fetchDailyDev } from '../dailydev';
 
 const mockFetchHN = vi.mocked(fetchHackerNews);
 const mockFetchGH = vi.mocked(fetchGithubTrending);
 const mockFetchLO = vi.mocked(fetchLobsters);
 const mockFetchDev = vi.mocked(fetchDevto);
+const mockFetchDD = vi.mocked(fetchDailyDev);
 
 function makeStory(overrides: Partial<Story>): Story {
   return {
@@ -72,13 +78,17 @@ describe('fetchAllSources', () => {
     mockFetchDev.mockResolvedValueOnce([
       makeStory({ id: 'dev-1', source: 'devto', url: 'https://dev.to/x' }),
     ]);
+    mockFetchDD.mockResolvedValueOnce([
+      makeStory({ id: 'dd-1', source: 'dailydev', url: 'https://daily.dev/x' }),
+    ]);
 
     const results = await fetchAllSources(new Set());
-    expect(results).toHaveLength(4);
+    expect(results).toHaveLength(5);
     expect(results[0].source).toBe('hackernews');
     expect(results[1].source).toBe('github-trending');
     expect(results[2].source).toBe('lobsters');
     expect(results[3].source).toBe('devto');
+    expect(results[4].source).toBe('dailydev');
   });
 
   it('deduplicates against existing URLs', async () => {
@@ -89,6 +99,7 @@ describe('fetchAllSources', () => {
     mockFetchGH.mockResolvedValueOnce([]);
     mockFetchLO.mockResolvedValueOnce([]);
     mockFetchDev.mockResolvedValueOnce([]);
+    mockFetchDD.mockResolvedValueOnce([]);
 
     const existing = new Set(['example.com/existing']);
     const results = await fetchAllSources(existing);
@@ -104,6 +115,7 @@ describe('fetchAllSources', () => {
     ]);
     mockFetchLO.mockResolvedValueOnce([]);
     mockFetchDev.mockResolvedValueOnce([]);
+    mockFetchDD.mockResolvedValueOnce([]);
 
     const results = await fetchAllSources(new Set());
 
@@ -121,14 +133,16 @@ describe('fetchAllSources', () => {
     mockFetchGH.mockRejectedValueOnce(new Error('GH error'));
     mockFetchLO.mockRejectedValueOnce(new Error('LO error'));
     mockFetchDev.mockRejectedValueOnce(new Error('DEV error'));
+    mockFetchDD.mockRejectedValueOnce(new Error('DD error'));
 
     const results = await fetchAllSources(new Set());
 
-    expect(results).toHaveLength(4);
+    expect(results).toHaveLength(5);
     expect(results[0].error).toBe('HN error');
     expect(results[1].error).toBe('GH error');
     expect(results[2].error).toBe('LO error');
     expect(results[3].error).toBe('DEV error');
+    expect(results[4].error).toBe('DD error');
   });
 
   it('handles non-Error throws', async () => {
@@ -136,6 +150,7 @@ describe('fetchAllSources', () => {
     mockFetchGH.mockResolvedValueOnce([]);
     mockFetchLO.mockResolvedValueOnce([]);
     mockFetchDev.mockResolvedValueOnce([]);
+    mockFetchDD.mockResolvedValueOnce([]);
 
     const results = await fetchAllSources(new Set());
     expect(results[0].error).toBe('Unknown error');

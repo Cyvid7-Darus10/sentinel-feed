@@ -2,7 +2,8 @@ export type SourceId =
   | 'hackernews'
   | 'github-trending'
   | 'lobsters'
-  | 'devto';
+  | 'devto'
+  | 'dailydev';
 
 export interface Story {
   readonly id: string;

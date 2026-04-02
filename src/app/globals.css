@@ -104,6 +104,7 @@ body {
 .badge-gh { background: #8b5cf6; color: #fff; }
 .badge-lo { background: #ac2e2e; color: #fff; }
 .badge-dev { background: #3b49df; color: #fff; }
+.badge-dd { background: #ce3df3; color: #fff; }
 
 /* ── Search Input ── */
 .search-input {

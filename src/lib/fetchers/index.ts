@@ -4,6 +4,7 @@ import { fetchHackerNews } from './hackernews';
 import { fetchGithubTrending } from './github-trending';
 import { fetchLobsters } from './lobsters';
 import { fetchDevto } from './devto';
+import { fetchDailyDev } from './dailydev';
 
 export async function fetchAllSources(
   existingUrls: ReadonlySet<string>
@@ -13,6 +14,7 @@ export async function fetchAllSources(
     { source: 'github-trending' as const, fn: fetchGithubTrending },
     { source: 'lobsters' as const, fn: fetchLobsters },
     { source: 'devto' as const, fn: fetchDevto },
+    { source: 'dailydev' as const, fn: fetchDailyDev },
   ];
 
   const results = await Promise.allSettled(
