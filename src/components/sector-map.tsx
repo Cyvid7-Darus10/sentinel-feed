@@ -4,7 +4,7 @@ import type { Story } from '@/lib/types';
 import type { Topic } from '@/lib/topics';
 import { TOPICS, categorizeStories } from '@/lib/topics';
 import { getSourceConfig, formatScore } from '@/lib/sources';
-import { relativeTime } from '@/lib/utils';
+import { relativeTime, isSafeUrl } from '@/lib/utils';
 import { useMemo } from 'react';
 
 interface SectorMapProps {
@@ -59,7 +59,7 @@ function Sector({
           return (
             <div key={story.id} className="story-tooltip-wrap relative">
               <a
-                href={story.url}
+                href={isSafeUrl(story.url) ? story.url : '#'}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-start gap-2 border-b border-border/50 px-3 py-2.5 transition-colors hover:bg-bg-hover sm:py-2"

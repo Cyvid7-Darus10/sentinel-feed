@@ -5,7 +5,7 @@ import type { Story } from '@/lib/types';
 import type { Topic } from '@/lib/topics';
 import { TOPICS, categorizeTopic } from '@/lib/topics';
 import { getSourceConfig, formatScore } from '@/lib/sources';
-import { relativeTime } from '@/lib/utils';
+import { relativeTime, isSafeUrl } from '@/lib/utils';
 
 interface RadarViewProps {
   readonly stories: readonly Story[];
@@ -436,7 +436,7 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
                 className={p.critical ? 'radar-pulse' : ''}
               />
               {/* The dot */}
-              <a href={p.story.url} target="_blank" rel="noopener noreferrer">
+              <a href={isSafeUrl(p.story.url) ? p.story.url : '#'} target="_blank" rel="noopener noreferrer">
                 <circle
                   cx={p.x}
                   cy={p.y}

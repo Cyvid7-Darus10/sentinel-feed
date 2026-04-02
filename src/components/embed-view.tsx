@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Story, SourceHealth } from '@/lib/types';
 import { TOPICS, categorizeTopic } from '@/lib/topics';
 import { getSourceConfig, formatScore } from '@/lib/sources';
-import { relativeTime } from '@/lib/utils';
+import { relativeTime, isSafeUrl } from '@/lib/utils';
 
 const CRITICAL_PATTERN =
   /cve[-\s]?\d|vulnerab|exploit|zero.?day|breach|ransomware|backdoor|rce\b|remote.?code|critical.?(flaw|bug|patch|update)|supply.?chain.?attack/i;
@@ -28,7 +28,7 @@ function CompactStory({ story }: { readonly story: Story }) {
 
   return (
     <a
-      href={story.url}
+      href={isSafeUrl(story.url) ? story.url : '#'}
       target="_blank"
       rel="noopener noreferrer"
       className="flex items-start gap-2 border-b border-border px-3 py-2.5 transition-colors hover:bg-bg-hover"

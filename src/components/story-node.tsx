@@ -1,6 +1,6 @@
 import type { Story } from '@/lib/types';
 import { getSourceConfig, formatScore } from '@/lib/sources';
-import { relativeTime } from '@/lib/utils';
+import { relativeTime, isSafeUrl } from '@/lib/utils';
 
 interface StoryNodeProps {
   readonly story: Story;
@@ -14,7 +14,7 @@ export function StoryNode({ story, topicColor }: StoryNodeProps) {
 
   return (
     <a
-      href={story.url}
+      href={isSafeUrl(story.url) ? story.url : '#'}
       target="_blank"
       rel="noopener noreferrer"
       className="group block border-b border-border px-5 py-3.5 transition-colors hover:bg-bg-hover"

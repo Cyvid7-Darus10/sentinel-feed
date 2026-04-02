@@ -33,6 +33,15 @@ export function relativeTime(isoDate: string): string {
   return `${diffDay}d ago`;
 }
 
+export function isSafeUrl(url: string): boolean {
+  try {
+    const { protocol } = new URL(url);
+    return protocol === 'https:' || protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
+
 export function normalizeUrl(url: string): string {
   try {
     const u = new URL(url);
