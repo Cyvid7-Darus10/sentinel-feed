@@ -162,6 +162,64 @@ body {
   overflow: hidden;
 }
 
+/* ── Story Tooltip ── */
+.story-tooltip-wrap .story-tooltip {
+  display: none;
+  position: absolute;
+  left: 100%;
+  top: 0;
+  z-index: 50;
+  width: 320px;
+  margin-left: 4px;
+  padding: 12px 14px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-left: 3px solid;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.story-tooltip-wrap:hover .story-tooltip {
+  display: block;
+}
+
+/* Flip tooltip left when in right-side columns */
+.sector-grid > :nth-child(3n) .story-tooltip,
+.sector-grid > :nth-child(3n) .story-tooltip {
+  left: auto;
+  right: 100%;
+  margin-left: 0;
+  margin-right: 4px;
+}
+
+@media (max-width: 1024px) {
+  .sector-grid > :nth-child(2n) .story-tooltip {
+    left: auto;
+    right: 100%;
+    margin-left: 0;
+    margin-right: 4px;
+  }
+  .sector-grid > :nth-child(3n) .story-tooltip {
+    left: 100%;
+    right: auto;
+    margin-left: 4px;
+    margin-right: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .story-tooltip-wrap .story-tooltip {
+    left: 8px;
+    right: 8px;
+    top: auto;
+    bottom: 100%;
+    width: auto;
+    margin-left: 0;
+    margin-right: 0;
+    margin-bottom: 4px;
+  }
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }

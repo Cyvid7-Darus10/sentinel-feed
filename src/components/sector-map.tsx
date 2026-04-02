@@ -94,35 +94,72 @@ function Sector({
         {topStories.map((story) => {
           const score = scoreLabel(story);
           return (
-            <a
-              key={story.id}
-              href={story.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-start gap-2 border-b border-border/50 px-3 py-2.5 transition-colors hover:bg-bg-hover sm:py-2"
-            >
-              <span
-                className={`badge mt-0.5 shrink-0 ${sourceBadgeClass(story.source)}`}
+            <div key={story.id} className="story-tooltip-wrap relative">
+              <a
+                href={story.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-start gap-2 border-b border-border/50 px-3 py-2.5 transition-colors hover:bg-bg-hover sm:py-2"
               >
-                {sourceBadgeLabel(story.source)}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="line-clamp-2 text-[13px] leading-snug text-text-bright sm:truncate sm:text-[12px]">
+                <span
+                  className={`badge mt-0.5 shrink-0 ${sourceBadgeClass(story.source)}`}
+                >
+                  {sourceBadgeLabel(story.source)}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="line-clamp-2 text-[13px] leading-snug text-text-bright sm:truncate sm:text-[12px]">
+                    {story.title}
+                  </p>
+                  {story.summary && (
+                    <p className="mt-0.5 truncate text-[11px] leading-snug text-text-secondary sm:text-[10px]">
+                      {story.summary}
+                    </p>
+                  )}
+                  <div className="mt-0.5 flex items-center gap-2 text-[11px] text-text-muted sm:text-[10px]">
+                    <span>{relativeTime(story.publishedAt ?? story.fetchedAt)}</span>
+                    {score && (
+                      <span style={{ color: topic.color }}>{score}</span>
+                    )}
+                  </div>
+                </div>
+              </a>
+              {/* Tooltip */}
+              <div className="story-tooltip" style={{ borderColor: topic.color }}>
+                <p className="text-[13px] font-medium leading-snug text-text-bright">
                   {story.title}
                 </p>
                 {story.summary && (
-                  <p className="mt-0.5 truncate text-[11px] leading-snug text-text-secondary sm:text-[10px]">
+                  <p className="mt-1.5 text-[12px] leading-relaxed text-text-secondary">
                     {story.summary}
                   </p>
                 )}
-                <div className="mt-0.5 flex items-center gap-2 text-[11px] text-text-muted sm:text-[10px]">
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-text-muted">
+                  <span className={`badge ${sourceBadgeClass(story.source)}`}>
+                    {sourceBadgeLabel(story.source)}
+                  </span>
+                  {story.author && <span>{story.author}</span>}
                   <span>{relativeTime(story.publishedAt ?? story.fetchedAt)}</span>
                   {score && (
-                    <span style={{ color: topic.color }}>{score}</span>
+                    <span className="font-semibold" style={{ color: topic.color }}>
+                      {score}
+                    </span>
                   )}
                 </div>
+                {story.tags.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {story.tags.slice(0, 5).map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-[10px] font-medium"
+                        style={{ color: topic.color }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
-            </a>
+            </div>
           );
         })}
         {stories.length === 0 && (
