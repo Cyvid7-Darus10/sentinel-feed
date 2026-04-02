@@ -9,6 +9,7 @@
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6)](https://www.typescriptlang.org)
 [![Next.js](https://img.shields.io/badge/Next.js-16-000)](https://nextjs.org)
+[![Live Demo](https://img.shields.io/badge/Live-sentinel--feed.pastelero.ph-34d399)](https://sentinel-feed.pastelero.ph)
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FCyvid7-Darus10%2Fsentinel-feed)
 
 <br />

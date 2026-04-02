@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(__dirname, '..', 'docs', 'screenshots');
-const URL = 'https://sentinel-feed.vercel.app';
+const URL = 'https://sentinel-feed.pastelero.ph';
 
 async function wait(ms) {
   return new Promise((r) => setTimeout(r, ms));
