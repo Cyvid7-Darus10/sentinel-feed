@@ -108,6 +108,30 @@ body {
 .badge-tm { background: #2d8c3c; color: #fff; }
 .badge-iq { background: #007dc3; color: #fff; }
 
+/* ── Embed Pills ── */
+.embed-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.12s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.embed-pill:hover {
+  color: var(--text-secondary);
+}
+
+.embed-pill-active {
+  color: var(--text-bright);
+  border-bottom-color: var(--pill-color, var(--text-bright));
+}
+
 /* ── Search Input ── */
 .search-input {
   background: var(--bg-base);

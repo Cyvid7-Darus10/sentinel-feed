@@ -27,5 +27,14 @@ export async function GET(request: NextRequest) {
     return new Date(b.fetchedAt).getTime() - new Date(a.fetchedAt).getTime();
   });
 
-  return NextResponse.json({ stories: sorted, count: sorted.length });
+  return NextResponse.json(
+    { stories: sorted, count: sorted.length },
+    {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET',
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
+    }
+  );
 }
