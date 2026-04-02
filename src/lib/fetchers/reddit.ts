@@ -27,9 +27,54 @@ interface RedditListing {
   };
 }
 
+let cachedToken: { token: string; expiresAt: number } | null = null;
+
+async function getAccessToken(): Promise<string> {
+  const clientId = process.env.REDDIT_CLIENT_ID;
+  const clientSecret = process.env.REDDIT_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    throw new Error(
+      'REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET must be set — ' +
+        'create a script app at https://www.reddit.com/prefs/apps'
+    );
+  }
+
+  // Reuse token if still valid (with 60s margin)
+  if (cachedToken && Date.now() < cachedToken.expiresAt - 60_000) {
+    return cachedToken.token;
+  }
+
+  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+
+  const res = await fetch('https://www.reddit.com/api/v1/access_token', {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${credentials}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'User-Agent': 'SentinelFeed/1.0',
+    },
+    body: 'grant_type=client_credentials',
+  });
+
+  if (!res.ok) {
+    throw new Error(`Reddit OAuth failed: ${res.status}`);
+  }
+
+  const data = await res.json();
+  cachedToken = {
+    token: data.access_token,
+    expiresAt: Date.now() + data.expires_in * 1000,
+  };
+
+  return cachedToken.token;
+}
+
 export async function fetchReddit(): Promise<Story[]> {
+  const token = await getAccessToken();
+
   const results = await Promise.allSettled(
-    SUBREDDITS.map((sub) => fetchSubreddit(sub))
+    SUBREDDITS.map((sub) => fetchSubreddit(sub, token))
   );
 
   const errors: string[] = [];
@@ -49,7 +94,6 @@ export async function fetchReddit(): Promise<Story[]> {
     }
   }
 
-  // If ALL subreddits failed, throw so the error is visible in source health
   if (stories.length === 0 && errors.length > 0) {
     throw new Error(errors.join('; '));
   }
@@ -61,33 +105,26 @@ export async function fetchReddit(): Promise<Story[]> {
   return stories;
 }
 
-async function fetchSubreddit(subreddit: string): Promise<Story[]> {
-  // Use old.reddit.com — less aggressive with cloud IP blocking
+async function fetchSubreddit(
+  subreddit: string,
+  token: string
+): Promise<Story[]> {
+  // Use oauth.reddit.com — the authenticated endpoint that works from cloud IPs
   const res = await fetch(
-    `https://old.reddit.com/r/${subreddit}/top.json?limit=${PER_SUBREDDIT}&t=day`,
+    `https://oauth.reddit.com/r/${subreddit}/top?limit=${PER_SUBREDDIT}&t=day`,
     {
       headers: {
-        'User-Agent': 'SentinelFeed/1.0 (tech news aggregator)',
-        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+        'User-Agent': 'SentinelFeed/1.0',
       },
     }
   );
 
   if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(
-      `r/${subreddit}: HTTP ${res.status}${body.includes('<!') ? ' (HTML — likely blocked)' : ''}`
-    );
+    throw new Error(`r/${subreddit}: HTTP ${res.status}`);
   }
 
-  const text = await res.text();
-
-  // Reddit sometimes returns HTML (captcha/block page) with a 200 status
-  if (text.startsWith('<!') || text.startsWith('<html')) {
-    throw new Error(`r/${subreddit}: received HTML instead of JSON (blocked)`);
-  }
-
-  const listing: RedditListing = JSON.parse(text);
+  const listing: RedditListing = await res.json();
   const stories: Story[] = [];
 
   for (const post of listing.data.children) {
