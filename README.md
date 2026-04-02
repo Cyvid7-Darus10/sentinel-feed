@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="public/icon-512x512.png" alt="Sentinel Feed" width="120" />
+
 <h1>Sentinel Feed</h1>
 
 <p><strong>AI-curated tech intelligence radar for developers</strong></p>
@@ -14,7 +16,7 @@
 
 <br />
 
-<img src="docs/screenshots/demo.gif" alt="Sentinel Feed — Demo" width="860" />
+<img src="public/og-image.png" alt="Sentinel Feed — Tech Intelligence Radar" width="860" />
 
 </div>
 
