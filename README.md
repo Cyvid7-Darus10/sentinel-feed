@@ -16,7 +16,7 @@
 
 <br />
 
-<img src="public/og-image.png" alt="Sentinel Feed — Tech Intelligence Radar" width="860" />
+<img src="docs/screenshots/demo.gif" alt="Sentinel Feed Walkthrough" width="860" />
 
 </div>
 
