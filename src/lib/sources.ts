@@ -1,6 +1,6 @@
 import type { SourceId } from './types';
 
-export interface SourceConfig {
+interface SourceConfig {
   readonly id: SourceId;
   readonly name: string;
   readonly badge: string;
@@ -19,7 +19,7 @@ const SOURCE_MAP = new Map<string, SourceConfig>(
   SOURCE_CONFIGS.map((s) => [s.id, s])
 );
 
-export const ALL_SOURCE_IDS: readonly SourceId[] = SOURCE_CONFIGS.map((s) => s.id);
+const ALL_SOURCE_IDS: readonly SourceId[] = SOURCE_CONFIGS.map((s) => s.id);
 
 export const VALID_SOURCE_SET: ReadonlySet<string> = new Set(ALL_SOURCE_IDS);
 
