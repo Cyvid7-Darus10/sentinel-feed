@@ -3,7 +3,9 @@ export type SourceId =
   | 'github-trending'
   | 'lobsters'
   | 'devto'
-  | 'dailydev';
+  | 'dailydev'
+  | 'techmeme'
+  | 'infoq';
 
 export interface Story {
   readonly id: string;

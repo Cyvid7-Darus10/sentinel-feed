@@ -12,7 +12,7 @@ function JsonLd() {
     name: 'Sentinel Feed',
     url: siteUrl,
     description:
-      'AI-curated tech news radar. Stories from Hacker News, GitHub Trending, Lobsters, Dev.to, and Reddit — filtered, summarized, and categorized in real time.',
+      'AI-curated tech news radar. Stories from Hacker News, GitHub Trending, Lobsters, Dev.to, and daily.dev — filtered, summarized, and categorized in real time.',
     applicationCategory: 'NewsApplication',
     operatingSystem: 'Any',
     offers: {

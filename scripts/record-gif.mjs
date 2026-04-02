@@ -7,7 +7,7 @@ import { mkdirSync, rmSync, readdirSync, writeFileSync, statSync } from 'fs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FRAMES_DIR = path.join(__dirname, '..', '.gif-frames');
 const OUT_GIF = path.join(__dirname, '..', 'docs', 'screenshots', 'demo.gif');
-const SITE = 'https://sentinel-feed.pastelero.ph';
+const SITE = process.env.SITE_URL ?? 'http://localhost:3000';
 
 // Capture a burst of frames (for animations like the radar sweep)
 async function captureFrames(page, prefix, count, intervalMs) {

@@ -14,6 +14,8 @@ const SOURCE_CONFIGS: readonly SourceConfig[] = [
   { id: 'lobsters', name: 'Lobsters', badge: 'LO', badgeClass: 'badge-lo', scoreUnit: 'pts' },
   { id: 'devto', name: 'Dev.to', badge: 'DEV', badgeClass: 'badge-dev', scoreUnit: '\u2764' },
   { id: 'dailydev', name: 'daily.dev', badge: 'DD', badgeClass: 'badge-dd', scoreUnit: 'pts' },
+  { id: 'techmeme', name: 'Techmeme', badge: 'TM', badgeClass: 'badge-tm', scoreUnit: 'pts' },
+  { id: 'infoq', name: 'InfoQ', badge: 'IQ', badgeClass: 'badge-iq', scoreUnit: 'pts' },
 ] as const;
 
 const SOURCE_MAP = new Map<string, SourceConfig>(

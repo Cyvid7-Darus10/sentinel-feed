@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(__dirname, '..', 'docs', 'screenshots');
-const SITE = 'https://sentinel-feed.pastelero.ph';
+const SITE = process.env.SITE_URL ?? 'http://localhost:3000';
 
 async function main() {
   const browser = await chromium.launch();
