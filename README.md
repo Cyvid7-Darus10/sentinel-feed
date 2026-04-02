@@ -4,7 +4,7 @@
 
 <p><strong>AI-curated tech intelligence radar for developers</strong></p>
 
-<p>Aggregates 5 sources every 15 minutes. Auto-categorizes into 6 topic sectors. Flags critical security stories. Summarizes with AI. Three visualization modes: Radar, Map, and List.</p>
+<p>Aggregates 4 sources every 15 minutes. Auto-categorizes into 6 topic sectors. Flags critical security stories. Summarizes with AI. Three visualization modes: Radar, Map, and List.</p>
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6)](https://www.typescriptlang.org)
@@ -22,7 +22,7 @@
 
 ## Why Sentinel Feed?
 
-Developers waste time cycling through Hacker News, GitHub Trending, Reddit, Lobsters, and Dev.to every day. Sentinel Feed consolidates all five into a single dashboard that fetches, deduplicates, categorizes, and ranks stories automatically — updated every 15 minutes, consumed in 5.
+Developers waste time cycling through Hacker News, GitHub Trending, Lobsters, and Dev.to every day. Sentinel Feed consolidates all four into a single dashboard that fetches, deduplicates, categorizes, and ranks stories automatically — updated every 15 minutes, consumed in 5.
 
 **Key features:**
 
@@ -31,7 +31,7 @@ Developers waste time cycling through Hacker News, GitHub Trending, Reddit, Lobs
 - **List view** — full-detail feed sorted by score with topic tabs
 - **Critical alerts** — CVEs, vulnerabilities, zero-days, and breaches are auto-detected and flagged
 - **AI summaries** — optional one-liner descriptions powered by Claude Haiku
-- **Source filtering** — toggle any combination of HN, GitHub, Lobsters, Dev.to, Reddit
+- **Source filtering** — toggle any combination of HN, GitHub, Lobsters, Dev.to
 - **Time ranges** — 6h, 12h, 24h, or 7d windows
 - **Search** — instant full-text search across titles, summaries, authors, and tags
 - **Mobile-responsive** — all three views adapt to any screen size
@@ -80,7 +80,6 @@ All views are fully responsive. Radar labels scale for small screens, map sector
 | **GitHub Trending** | Trending repos in TypeScript, Python, Go, Rust | Stars gained today | None |
 | **Lobsters** | Top 25 stories via JSON API | Upvotes | None |
 | **Dev.to** | Top 30 articles of the day | Reactions | None |
-| **Reddit** | r/programming, r/netsec, r/devops (15 each) | Upvotes | None |
 
 All sources are free, require no API keys, and are fetched in parallel with independent error handling — one source failing doesn't block the others.
 
@@ -206,7 +205,6 @@ sentinel-feed/
 │       │   ├── github-trending.ts  # GitHub Trending HTML parser
 │       │   ├── lobsters.ts         # Lobsters JSON API
 │       │   ├── devto.ts            # Dev.to articles API
-│       │   └── reddit.ts           # Reddit JSON API (3 subreddits)
 │       ├── ai.ts                   # AI enrichment — summaries + filtering
 │       ├── storage.ts              # Vercel Blob CRUD operations
 │       ├── topics.ts               # Keyword-based topic classification
