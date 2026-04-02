@@ -1,7 +1,8 @@
 {
   "name": "sentinel-feed",
-  "version": "0.1.0",
-  "private": true,
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "description": "AI-curated tech intelligence radar — stories from Hacker News, GitHub Trending, Lobsters, Dev.to, daily.dev, Techmeme, and InfoQ, filtered and summarized in real time.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

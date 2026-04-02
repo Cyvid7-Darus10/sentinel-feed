@@ -187,12 +187,16 @@ Set a spend limit under **Vercel > Settings > Billing > Spend Management** to av
 sentinel-feed/
 ├── src/
 │   ├── app/
-│   │   ├── page.tsx                # Dashboard entry (server component + JSON-LD)
+│   │   ├── page.tsx                # Dashboard entry (server component)
 │   │   ├── layout.tsx              # Root layout, fonts, SEO metadata
 │   │   ├── globals.css             # Theme tokens, radar animations, tooltips
 │   │   ├── robots.ts               # robots.txt generation
 │   │   ├── sitemap.ts              # sitemap.xml generation
 │   │   ├── manifest.ts             # PWA web manifest
+│   │   ├── embed/page.tsx          # Compact view for Sentinel Bar iframe
+│   │   ├── privacy/page.tsx        # Privacy policy
+│   │   ├── terms/page.tsx          # Terms of service
+│   │   ├── accessibility/page.tsx  # Accessibility statement
 │   │   └── api/
 │   │       ├── fetch/route.ts      # Cron: fetch sources → AI enrich → store
 │   │       ├── stories/route.ts    # GET /api/stories — filtered story list
@@ -202,7 +206,8 @@ sentinel-feed/
 │   │   ├── tactical-map.tsx        # Main dashboard — filters, view switching
 │   │   ├── radar-view.tsx          # Radar — SVG circle, dots, sweep, tooltips
 │   │   ├── sector-map.tsx          # Map — topic grid with story cards
-│   │   └── story-node.tsx          # List — story card with score + meta
+│   │   ├── story-node.tsx          # List — story card with score + meta
+│   │   └── embed-view.tsx          # Compact feed for menu bar app
 │   └── lib/
 │       ├── fetchers/
 │       │   ├── index.ts            # Parallel fetcher orchestration + dedup
