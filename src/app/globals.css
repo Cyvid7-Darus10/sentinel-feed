@@ -170,15 +170,12 @@ body {
 
 @media (max-width: 640px) {
   .sector-grid {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto;
-    overflow-y: auto;
-    padding: 0;
-    gap: 0;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 1fr);
   }
 
   .sector-card {
-    max-height: 360px;
+    max-height: none;
   }
 }
 

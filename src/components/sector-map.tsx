@@ -21,8 +21,8 @@ function Sector({
   readonly stories: readonly Story[];
   readonly onSelect: () => void;
 }) {
-  const topStories = stories.slice(0, 6);
-  const remaining = Math.max(0, stories.length - 6);
+  const topStories = stories.slice(0, 5);
+  const remaining = Math.max(0, stories.length - 5);
 
   return (
     <div
@@ -32,19 +32,19 @@ function Sector({
       {/* Sector Header */}
       <button
         onClick={onSelect}
-        className="flex items-center justify-between border-b border-border px-3 py-2 text-left transition-colors hover:bg-bg-hover"
+        className="flex items-center justify-between border-b border-border px-2 py-1.5 text-left transition-colors hover:bg-bg-hover sm:px-3 sm:py-2"
       >
         <div className="flex items-center gap-2">
           <span
             className="inline-block h-2 w-2"
             style={{ background: topic.color }}
           />
-          <span className="text-[12px] font-bold tracking-wider text-text-bright sm:text-[11px]">
+          <span className="text-[10px] font-bold tracking-wider text-text-bright sm:text-[11px]">
             {topic.label}
           </span>
         </div>
         <span
-          className="text-[18px] font-bold tabular-nums"
+          className="text-[14px] font-bold tabular-nums sm:text-[18px]"
           style={{ color: topic.color }}
         >
           {stories.length}
@@ -62,23 +62,23 @@ function Sector({
                 href={isSafeUrl(story.url) ? story.url : '#'}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-start gap-2 border-b border-border/50 px-3 py-2.5 transition-colors hover:bg-bg-hover sm:py-2"
+                className="flex items-start gap-2 border-b border-border/50 px-2 py-1.5 transition-colors hover:bg-bg-hover sm:px-3 sm:py-2"
               >
                 <span
-                  className={`badge mt-0.5 shrink-0 ${src.badgeClass}`}
+                  className={`badge mt-0.5 hidden shrink-0 sm:inline ${src.badgeClass}`}
                 >
                   {src.badge}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="line-clamp-2 text-[13px] leading-snug text-text-bright sm:truncate sm:text-[12px]">
+                  <p className="truncate text-[11px] leading-snug text-text-bright sm:text-[12px] sm:line-clamp-2 sm:whitespace-normal">
                     {story.title}
                   </p>
                   {story.summary && (
-                    <p className="mt-0.5 truncate text-[11px] leading-snug text-text-secondary sm:text-[10px]">
+                    <p className="mt-0.5 hidden truncate text-[10px] leading-snug text-text-secondary sm:block">
                       {story.summary}
                     </p>
                   )}
-                  <div className="mt-0.5 flex items-center gap-2 text-[11px] text-text-muted sm:text-[10px]">
+                  <div className="mt-0.5 flex items-center gap-2 text-[10px] text-text-muted">
                     <span>{relativeTime(story.publishedAt ?? story.fetchedAt)}</span>
                     {score && (
                       <span style={{ color: topic.color }}>{score}</span>
@@ -136,7 +136,7 @@ function Sector({
       {remaining > 0 && (
         <button
           onClick={onSelect}
-          className="border-t border-border px-3 py-1.5 text-center text-[10px] text-text-muted transition-colors hover:bg-bg-hover hover:text-text-secondary"
+          className="border-t border-border px-2 py-1 text-center text-[9px] text-text-muted transition-colors hover:bg-bg-hover hover:text-text-secondary sm:px-3 sm:py-1.5 sm:text-[10px]"
         >
           +{remaining} more
         </button>
