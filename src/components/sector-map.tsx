@@ -59,8 +59,8 @@ function Sector({
   readonly stories: readonly Story[];
   readonly onSelect: () => void;
 }) {
-  const topStories = stories.slice(0, 8);
-  const remaining = Math.max(0, stories.length - 8);
+  const topStories = stories.slice(0, 6);
+  const remaining = Math.max(0, stories.length - 6);
 
   return (
     <div
@@ -110,6 +110,11 @@ function Sector({
                 <p className="line-clamp-2 text-[13px] leading-snug text-text-bright sm:truncate sm:text-[12px]">
                   {story.title}
                 </p>
+                {story.summary && (
+                  <p className="mt-0.5 truncate text-[11px] leading-snug text-text-secondary sm:text-[10px]">
+                    {story.summary}
+                  </p>
+                )}
                 <div className="mt-0.5 flex items-center gap-2 text-[11px] text-text-muted sm:text-[10px]">
                   <span>{relativeTime(story.publishedAt ?? story.fetchedAt)}</span>
                   {score && (
