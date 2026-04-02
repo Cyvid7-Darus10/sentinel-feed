@@ -14,7 +14,7 @@
 
 <br />
 
-<img src="docs/screenshots/radar-desktop.png" alt="Sentinel Feed — Radar View" width="860" />
+<img src="docs/screenshots/demo.gif" alt="Sentinel Feed — Demo" width="860" />
 
 </div>
 
