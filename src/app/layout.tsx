@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 
@@ -8,10 +8,76 @@ const jetbrainsMono = JetBrains_Mono({
   display: 'swap',
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://sentinel-feed.pastelero.ph';
+
+export const viewport: Viewport = {
+  themeColor: '#0a0a0c',
+  colorScheme: 'dark',
+  width: 'device-width',
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
-  title: 'Sentinel Feed — Tech Intelligence',
+  title: {
+    default: 'Sentinel Feed — Tech Intelligence Radar',
+    template: '%s | Sentinel Feed',
+  },
   description:
-    'AI-summarized tech news from HN, GitHub trending, and more. Stay current in 5 minutes.',
+    'AI-curated tech news radar. Stories from Hacker News, GitHub Trending, Lobsters, Dev.to, and Reddit — filtered, summarized, and categorized in real time. Stay current in 5 minutes.',
+  keywords: [
+    'tech news',
+    'hacker news',
+    'github trending',
+    'developer news',
+    'AI news aggregator',
+    'security alerts',
+    'programming news',
+    'dev.to',
+    'lobsters',
+    'reddit programming',
+  ],
+  authors: [{ name: 'Sentinel Feed' }],
+  creator: 'Sentinel Feed',
+  metadataBase: new URL(siteUrl),
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: '/',
+    siteName: 'Sentinel Feed',
+    title: 'Sentinel Feed — Tech Intelligence Radar',
+    description:
+      'AI-curated tech news radar. Stories from Hacker News, GitHub Trending, Lobsters, Dev.to, and Reddit — filtered and summarized in real time.',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Sentinel Feed — AI-curated tech intelligence radar',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Sentinel Feed — Tech Intelligence Radar',
+    description:
+      'AI-curated tech news from HN, GitHub Trending, Lobsters, Dev.to, and Reddit. Stay current in 5 minutes.',
+    images: ['/og-image.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-snippet': -1,
+      'max-image-preview': 'large',
+      'max-video-preview': -1,
+    },
+  },
+  category: 'technology',
 };
 
 export default function RootLayout({
