@@ -48,13 +48,44 @@ function scoreLabel(story: Story): string | null {
   return `${story.score.toLocaleString()} pts`;
 }
 
+// ── Seeded PRNG for deterministic but random-looking placement ──
+function seededRandom(seed: number): () => number {
+  let s = seed;
+  return () => {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    return (s >>> 0) / 0xffffffff;
+  };
+}
+
+// Normal-ish distribution between min and max (average of two uniforms)
+function normalBetween(rng: () => number, min: number, max: number): number {
+  return min + (rng() + rng()) / 2 * (max - min);
+}
+
+// ── SVG arc path for a sector wedge ──
+function sectorPath(
+  cx: number,
+  cy: number,
+  r: number,
+  startAngle: number,
+  endAngle: number
+): string {
+  const x1 = cx + r * Math.cos(startAngle);
+  const y1 = cy + r * Math.sin(startAngle);
+  const x2 = cx + r * Math.cos(endAngle);
+  const y2 = cy + r * Math.sin(endAngle);
+  const largeArc = endAngle - startAngle > Math.PI ? 1 : 0;
+  return `M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${largeArc} 1 ${x2},${y2} Z`;
+}
+
 interface PlottedStory {
   readonly story: Story;
-  readonly topicId: string;
+  readonly topicIdx: number;
   readonly topicColor: string;
-  readonly cx: number;
-  readonly cy: number;
   readonly critical: boolean;
+  readonly dotR: number;
+  x: number;
+  y: number;
 }
 
 function plotStories(
@@ -62,14 +93,13 @@ function plotStories(
   centerX: number,
   centerY: number,
   radius: number
-): readonly PlottedStory[] {
+): PlottedStory[] {
   const byTopic: Record<string, Story[]> = {};
   for (const topic of TOPICS) {
     byTopic[topic.id] = [];
   }
   for (const story of stories) {
-    const tid = categorizeTopic(story);
-    byTopic[tid].push(story);
+    byTopic[categorizeTopic(story)].push(story);
   }
   for (const topic of TOPICS) {
     byTopic[topic.id].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
@@ -81,32 +111,86 @@ function plotStories(
   for (let i = 0; i < TOPICS.length; i++) {
     const topic = TOPICS[i];
     const topicStories = byTopic[topic.id];
-    const baseAngle = i * sectorAngle - Math.PI / 2; // start at top
+    const baseAngle = i * sectorAngle - Math.PI / 2;
+    const maxScore = topicStories[0]?.score ?? 1;
 
     for (let j = 0; j < topicStories.length; j++) {
       const story = topicStories[j];
+      const rng = seededRandom(story.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0));
+      const critical = isCritical(story);
 
-      // Higher score = closer to center (more prominent)
-      const maxScore = topicStories[0]?.score ?? 1;
+      // Score-based radius: high score → inner, low → outer
       const normalizedScore = maxScore > 0 ? (story.score ?? 0) / maxScore : 0.5;
-      const r = radius * 0.2 + radius * 0.7 * (1 - normalizedScore * 0.8);
+      const rMin = radius * 0.15;
+      const rMax = radius * 0.92;
+      const r = rMin + (1 - normalizedScore * 0.75) * (rMax - rMin);
 
-      // Spread stories within the sector
-      const spreadCount = Math.min(topicStories.length, 20);
-      const angleOffset = (j / Math.max(spreadCount, 1) - 0.5) * sectorAngle * 0.7;
-      const angle = baseAngle + sectorAngle / 2 + angleOffset;
+      // Random angle within sector (normal distribution, clustered toward center of sector)
+      const angleMargin = sectorAngle * 0.08;
+      const angle = normalBetween(
+        rng,
+        baseAngle + angleMargin,
+        baseAngle + sectorAngle - angleMargin
+      );
 
-      // Add some jitter to avoid perfect lines
-      const jitterR = r + (((j * 7 + i * 13) % 11) - 5) * 2;
+      // Add radius jitter for organic feel
+      const jitteredR = r + (rng() - 0.5) * radius * 0.12;
+
+      // Dot size: bigger for higher score, critical stories larger
+      const dotR = critical ? 6 : 3 + normalizedScore * 3;
 
       plotted.push({
         story,
-        topicId: topic.id,
+        topicIdx: i,
         topicColor: topic.color,
-        cx: centerX + jitterR * Math.cos(angle),
-        cy: centerY + jitterR * Math.sin(angle),
-        critical: isCritical(story),
+        critical,
+        dotR,
+        x: centerX + jitteredR * Math.cos(angle),
+        y: centerY + jitteredR * Math.sin(angle),
       });
+    }
+  }
+
+  // ── Simple iterative collision relaxation (no D3 needed) ──
+  const padding = 2;
+  for (let iter = 0; iter < 12; iter++) {
+    for (let a = 0; a < plotted.length; a++) {
+      for (let b = a + 1; b < plotted.length; b++) {
+        const pa = plotted[a];
+        const pb = plotted[b];
+        const dx = pb.x - pa.x;
+        const dy = pb.y - pa.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const minDist = pa.dotR + pb.dotR + padding;
+        if (dist < minDist && dist > 0) {
+          const overlap = (minDist - dist) / 2;
+          const nx = dx / dist;
+          const ny = dy / dist;
+          pa.x -= nx * overlap;
+          pa.y -= ny * overlap;
+          pb.x += nx * overlap;
+          pb.y += ny * overlap;
+        }
+      }
+    }
+
+    // Clamp back into sector bounds after each iteration
+    for (const p of plotted) {
+      const dx = p.x - centerX;
+      const dy = p.y - centerY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      // Keep within radar circle
+      if (dist > radius * 0.93) {
+        const scale = (radius * 0.93) / dist;
+        p.x = centerX + dx * scale;
+        p.y = centerY + dy * scale;
+      }
+      // Keep outside center dead zone
+      if (dist < radius * 0.1) {
+        const scale = (radius * 0.1) / dist;
+        p.x = centerX + dx * scale;
+        p.y = centerY + dy * scale;
+      }
     }
   }
 
@@ -161,13 +245,12 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
   const [hoveredStory, setHoveredStory] = useState<PlottedStory | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
-  const size = 600;
+  const size = 700;
   const cx = size / 2;
   const cy = size / 2;
-  const outerR = size / 2 - 40;
+  const outerR = size / 2 - 50;
 
   const plotted = useMemo(() => plotStories(stories, cx, cy, outerR), [stories, cx, cy, outerR]);
-
   const criticalCount = useMemo(() => plotted.filter((p) => p.critical).length, [plotted]);
 
   const handleDotHover = useCallback(
@@ -176,8 +259,8 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
       const rect = containerRef.current?.getBoundingClientRect();
       if (rect) {
         setTooltipPos({
-          x: e.clientX - rect.left + 12,
-          y: e.clientY - rect.top - 8,
+          x: e.clientX - rect.left + 16,
+          y: e.clientY - rect.top - 12,
         });
       }
     },
@@ -188,35 +271,88 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
     setHoveredStory(null);
   }, []);
 
-  const sectorAngle = 360 / TOPICS.length;
+  const sectorAngle = (2 * Math.PI) / TOPICS.length;
+
+  // Tick marks on outermost ring
+  const tickCount = 72;
+  const ticks = Array.from({ length: tickCount }, (_, i) => {
+    const angle = (i / tickCount) * 2 * Math.PI - Math.PI / 2;
+    const isMajor = i % 6 === 0;
+    const inner = outerR - (isMajor ? 8 : 4);
+    return {
+      x1: cx + inner * Math.cos(angle),
+      y1: cy + inner * Math.sin(angle),
+      x2: cx + outerR * Math.cos(angle),
+      y2: cy + outerR * Math.sin(angle),
+      isMajor,
+    };
+  });
 
   return (
     <div ref={containerRef} className="relative flex h-full items-center justify-center overflow-hidden bg-bg-base">
+      {/* CRT scanline overlay */}
+      <div className="radar-scanlines pointer-events-none absolute inset-0 z-[1]" />
+      {/* Vignette */}
+      <div className="pointer-events-none absolute inset-0 z-[1]" style={{
+        background: 'radial-gradient(circle at center, transparent 40%, rgba(10,10,12,0.5) 100%)',
+      }} />
+
       {/* Critical alert banner */}
       {criticalCount > 0 && (
-        <div className="absolute left-0 right-0 top-0 z-10 border-b border-danger/30 bg-danger/10 px-4 py-1.5 text-center text-[11px] font-semibold text-danger">
+        <div className="absolute left-0 right-0 top-0 z-10 border-b border-danger/30 bg-danger/10 px-4 py-1.5 text-center text-[11px] font-semibold tracking-wider text-danger radar-alert-pulse">
           {criticalCount} CRITICAL {criticalCount === 1 ? 'ALERT' : 'ALERTS'} DETECTED
         </div>
       )}
 
       <svg
         viewBox={`0 0 ${size} ${size}`}
-        className="radar-svg h-full max-h-[min(80vh,600px)] w-full max-w-[min(80vh,600px)]"
+        className="h-full max-h-[min(85vh,700px)] w-full max-w-[min(85vh,700px)]"
+        style={{ position: 'relative', zIndex: 2 }}
       >
         <defs>
-          {/* Sweep gradient */}
-          <linearGradient id="sweep-grad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#34d399" stopOpacity="0.15" />
+          {/* Sweep trail conic gradient approximation */}
+          <linearGradient id="sweep-trail" gradientTransform="rotate(0)">
+            <stop offset="0%" stopColor="#34d399" stopOpacity="0.12" />
             <stop offset="100%" stopColor="#34d399" stopOpacity="0" />
           </linearGradient>
-          {/* Critical pulse */}
+          {/* Critical glow */}
           <radialGradient id="critical-glow">
-            <stop offset="0%" stopColor="#f87171" stopOpacity="0.6" />
+            <stop offset="0%" stopColor="#f87171" stopOpacity="0.7" />
+            <stop offset="50%" stopColor="#f87171" stopOpacity="0.2" />
             <stop offset="100%" stopColor="#f87171" stopOpacity="0" />
           </radialGradient>
+          {/* Dot glow per topic */}
+          {TOPICS.map((topic) => (
+            <radialGradient key={topic.id} id={`glow-${topic.id}`}>
+              <stop offset="0%" stopColor={topic.color} stopOpacity="0.4" />
+              <stop offset="100%" stopColor={topic.color} stopOpacity="0" />
+            </radialGradient>
+          ))}
+          {/* Clip to radar circle */}
+          <clipPath id="radar-clip">
+            <circle cx={cx} cy={cy} r={outerR} />
+          </clipPath>
         </defs>
 
-        {/* Concentric rings */}
+        {/* ── Sector wedge backgrounds ── */}
+        <g clipPath="url(#radar-clip)">
+          {TOPICS.map((topic, i) => {
+            const startAngle = i * sectorAngle - Math.PI / 2;
+            const endAngle = startAngle + sectorAngle;
+            return (
+              <path
+                key={`sector-bg-${topic.id}`}
+                d={sectorPath(cx, cy, outerR, startAngle, endAngle)}
+                fill={topic.color}
+                opacity="0.04"
+                className="cursor-pointer transition-opacity hover:opacity-[0.08]"
+                onClick={() => onSelectTopic(topic.id)}
+              />
+            );
+          })}
+        </g>
+
+        {/* ── Concentric rings ── */}
         {[0.25, 0.5, 0.75, 1].map((frac) => (
           <circle
             key={frac}
@@ -225,111 +361,172 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
             r={outerR * frac}
             fill="none"
             stroke="var(--border)"
-            strokeWidth="0.5"
-            opacity="0.6"
+            strokeWidth={frac === 1 ? '1' : '0.5'}
+            opacity={frac === 1 ? '0.8' : '0.4'}
           />
         ))}
 
-        {/* Sector divider lines + labels */}
+        {/* ── Tick marks on outer ring ── */}
+        {ticks.map((t, i) => (
+          <line
+            key={i}
+            x1={t.x1}
+            y1={t.y1}
+            x2={t.x2}
+            y2={t.y2}
+            stroke="var(--border)"
+            strokeWidth={t.isMajor ? '1' : '0.5'}
+            opacity={t.isMajor ? '0.6' : '0.3'}
+          />
+        ))}
+
+        {/* ── Crosshair lines (cardinal directions) ── */}
+        {[0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2].map((angle) => (
+          <line
+            key={angle}
+            x1={cx}
+            y1={cy}
+            x2={cx + outerR * Math.cos(angle - Math.PI / 2)}
+            y2={cy + outerR * Math.sin(angle - Math.PI / 2)}
+            stroke="var(--border)"
+            strokeWidth="0.3"
+            opacity="0.25"
+            strokeDasharray="4 6"
+          />
+        ))}
+
+        {/* ── Sector divider lines ── */}
         {TOPICS.map((topic, i) => {
-          const angle = (i * sectorAngle - 90) * (Math.PI / 180);
-          const x2 = cx + outerR * Math.cos(angle);
-          const y2 = cy + outerR * Math.sin(angle);
-          const labelAngle = ((i + 0.5) * sectorAngle - 90) * (Math.PI / 180);
-          const labelR = outerR + 20;
-          const lx = cx + labelR * Math.cos(labelAngle);
-          const ly = cy + labelR * Math.sin(labelAngle);
+          const angle = i * sectorAngle - Math.PI / 2;
           return (
-            <g key={topic.id}>
-              <line
-                x1={cx}
-                y1={cy}
-                x2={x2}
-                y2={y2}
-                stroke="var(--border)"
-                strokeWidth="0.5"
-                opacity="0.5"
+            <line
+              key={`div-${topic.id}`}
+              x1={cx}
+              y1={cy}
+              x2={cx + outerR * Math.cos(angle)}
+              y2={cy + outerR * Math.sin(angle)}
+              stroke={topic.color}
+              strokeWidth="0.5"
+              opacity="0.2"
+            />
+          );
+        })}
+
+        {/* ── Rotating sweep line + trail ── */}
+        <g className="radar-sweep" style={{ transformOrigin: `${cx}px ${cy}px` }}>
+          {/* Sweep trail wedge */}
+          <path
+            d={sectorPath(cx, cy, outerR, -0.7, 0)}
+            fill="#34d399"
+            opacity="0.04"
+          />
+          {/* Sweep line */}
+          <line
+            x1={cx}
+            y1={cy}
+            x2={cx + outerR}
+            y2={cy}
+            stroke="#34d399"
+            strokeWidth="1.5"
+            opacity="0.4"
+          />
+        </g>
+
+        {/* ── Story dots ── */}
+        {plotted.map((p) => {
+          // Calculate angle for sweep-blink animation delay
+          const dx = p.x - cx;
+          const dy = p.y - cy;
+          const dotAngle = ((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360;
+          const blinkDelay = (dotAngle / 360) * 6; // 6s = sweep duration
+
+          return (
+            <g key={p.story.id}>
+              {/* Ambient glow behind dot */}
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={p.dotR * 3}
+                fill={p.critical ? 'url(#critical-glow)' : `url(#glow-${TOPICS[p.topicIdx].id})`}
+                opacity={p.critical ? 1 : 0.5}
+                className={p.critical ? 'radar-pulse' : ''}
               />
-              <text
-                x={lx}
-                y={ly}
-                textAnchor="middle"
-                dominantBaseline="central"
-                fill={topic.color}
-                fontSize="9"
-                fontWeight="700"
-                fontFamily="var(--font-mono)"
-                letterSpacing="0.05em"
-                className="cursor-pointer"
-                onClick={() => onSelectTopic(topic.id)}
-              >
-                {topic.label}
-              </text>
+              {/* The dot */}
+              <a href={p.story.url} target="_blank" rel="noopener noreferrer">
+                <circle
+                  cx={p.x}
+                  cy={p.y}
+                  r={p.dotR}
+                  fill={p.critical ? '#f87171' : p.topicColor}
+                  stroke={p.critical ? '#fca5a5' : `${p.topicColor}80`}
+                  strokeWidth={p.critical ? 1.5 : 0.5}
+                  className="radar-dot cursor-pointer"
+                  style={{
+                    animationDelay: `${blinkDelay}s`,
+                    filter: p.critical ? 'drop-shadow(0 0 6px #f87171)' : `drop-shadow(0 0 2px ${p.topicColor})`,
+                    '--dot-color': p.critical ? '#f87171' : p.topicColor,
+                  } as React.CSSProperties}
+                  onMouseEnter={(e) => handleDotHover(p, e)}
+                  onMouseLeave={handleDotLeave}
+                />
+              </a>
             </g>
           );
         })}
 
-        {/* Rotating sweep line */}
-        <line
-          x1={cx}
-          y1={cy}
-          x2={cx + outerR}
-          y2={cy}
-          stroke="#34d399"
-          strokeWidth="1"
-          opacity="0.3"
-          className="radar-sweep"
-          style={{ transformOrigin: `${cx}px ${cy}px` }}
-        />
+        {/* ── Center crosshair ── */}
+        <circle cx={cx} cy={cy} r="4" fill="none" stroke="#34d399" strokeWidth="1" opacity="0.5" />
+        <circle cx={cx} cy={cy} r="1.5" fill="#34d399" opacity="0.8" />
+        <line x1={cx - 10} y1={cy} x2={cx + 10} y2={cy} stroke="#34d399" strokeWidth="0.5" opacity="0.4" />
+        <line x1={cx} y1={cy - 10} x2={cx} y2={cy + 10} stroke="#34d399" strokeWidth="0.5" opacity="0.4" />
 
-        {/* Story dots */}
-        {plotted.map((p) => (
-          <g key={p.story.id}>
-            {/* Critical glow */}
-            {p.critical && (
-              <circle
-                cx={p.cx}
-                cy={p.cy}
-                r="10"
-                fill="url(#critical-glow)"
-                className="radar-pulse"
-              />
-            )}
-            {/* Dot */}
-            <a
-              href={p.story.url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <circle
-                cx={p.cx}
-                cy={p.cy}
-                r={p.critical ? 5 : 3.5}
-                fill={p.critical ? '#f87171' : p.topicColor}
-                opacity={p.critical ? 1 : 0.8}
-                stroke={p.critical ? '#fca5a5' : 'none'}
-                strokeWidth={p.critical ? 1 : 0}
-                className="cursor-pointer transition-all duration-150 hover:opacity-100"
-                onMouseEnter={(e) => handleDotHover(p, e)}
-                onMouseLeave={handleDotLeave}
-                style={{ filter: p.critical ? 'drop-shadow(0 0 4px #f87171)' : undefined }}
-              />
-            </a>
-          </g>
-        ))}
-
-        {/* Center point */}
-        <circle cx={cx} cy={cy} r="3" fill="#34d399" opacity="0.6" />
+        {/* ── Sector labels ── */}
+        {TOPICS.map((topic, i) => {
+          const midAngle = (i + 0.5) * sectorAngle - Math.PI / 2;
+          const labelR = outerR + 24;
+          const lx = cx + labelR * Math.cos(midAngle);
+          const ly = cy + labelR * Math.sin(midAngle);
+          const count = plotted.filter((p) => p.topicIdx === i).length;
+          return (
+            <g key={`label-${topic.id}`} className="cursor-pointer" onClick={() => onSelectTopic(topic.id)}>
+              <text
+                x={lx}
+                y={ly - 6}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fill={topic.color}
+                fontSize="10"
+                fontWeight="700"
+                fontFamily="var(--font-mono)"
+                letterSpacing="0.08em"
+              >
+                {topic.label}
+              </text>
+              <text
+                x={lx}
+                y={ly + 7}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fill={topic.color}
+                fontSize="9"
+                fontFamily="var(--font-mono)"
+                opacity="0.5"
+              >
+                {count}
+              </text>
+            </g>
+          );
+        })}
       </svg>
 
       {/* Tooltip */}
       {hoveredStory && (
         <div
-          className="radar-tooltip pointer-events-none absolute z-50"
+          className="pointer-events-none absolute z-50"
           style={{
             left: tooltipPos.x,
             top: tooltipPos.y,
-            transform: tooltipPos.x > (containerRef.current?.clientWidth ?? 600) / 2
+            transform: tooltipPos.x > (containerRef.current?.clientWidth ?? 700) / 2
               ? 'translateX(-100%)'
               : 'translateX(0)',
           }}
@@ -339,13 +536,29 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
       )}
 
       {/* Legend */}
-      <div className="absolute bottom-3 left-3 flex items-center gap-4 text-[10px] text-text-muted">
+      <div className="absolute bottom-3 left-3 z-10 flex items-center gap-5 text-[10px] text-text-muted">
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-full bg-danger" style={{ boxShadow: '0 0 4px #f87171' }} />
+          <span className="inline-block h-3 w-3 rounded-full bg-danger" style={{ boxShadow: '0 0 6px #f87171' }} />
           CRITICAL
         </span>
-        <span>CENTER = HIGH SCORE</span>
-        <span>EDGE = LOW SCORE</span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2 w-2 rounded-full" style={{ background: '#94a3b8' }} />
+          SMALL = LOW
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-3.5 w-3.5 rounded-full" style={{ background: '#94a3b8' }} />
+          LARGE = HIGH
+        </span>
+      </div>
+
+      {/* Topic color legend (right side) */}
+      <div className="absolute bottom-3 right-3 z-10 flex items-center gap-3 text-[10px] text-text-muted">
+        {TOPICS.map((topic) => (
+          <span key={topic.id} className="flex items-center gap-1">
+            <span className="inline-block h-2 w-2 rounded-full" style={{ background: topic.color }} />
+            <span style={{ color: topic.color }}>{topic.label}</span>
+          </span>
+        ))}
       </div>
     </div>
   );

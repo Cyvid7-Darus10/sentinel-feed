@@ -221,6 +221,8 @@ body {
 }
 
 /* ── Radar View ── */
+
+/* Sweep rotation */
 .radar-sweep {
   animation: radar-spin 6s linear infinite;
 }
@@ -230,22 +232,67 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* Critical dot pulse */
 .radar-pulse {
   animation: radar-pulse-anim 2s ease-in-out infinite;
 }
 
 @keyframes radar-pulse-anim {
-  0%, 100% { opacity: 0.4; r: 8; }
-  50% { opacity: 0.8; r: 12; }
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.9; }
 }
 
+/* Dot blink as sweep passes */
+.radar-dot {
+  animation: radar-dot-blink 6s ease-in-out infinite;
+  transition: r 0.15s ease, opacity 0.15s ease;
+}
+
+.radar-dot:hover {
+  opacity: 1 !important;
+  filter: drop-shadow(0 0 6px var(--dot-color, #94a3b8)) !important;
+}
+
+@keyframes radar-dot-blink {
+  0%, 8% { opacity: 1; }
+  12%, 100% { opacity: 0.65; }
+}
+
+/* CRT scanline overlay */
+.radar-scanlines {
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.03) 0px,
+    rgba(255, 255, 255, 0.03) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  animation: scanline-drift 12s linear infinite;
+}
+
+@keyframes scanline-drift {
+  from { background-position-y: 0; }
+  to { background-position-y: 8px; }
+}
+
+/* Alert banner pulse */
+.radar-alert-pulse {
+  animation: alert-pulse 3s ease-in-out infinite;
+}
+
+@keyframes alert-pulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+/* Tooltip */
 .radar-tooltip-inner {
   width: 300px;
   padding: 10px 12px;
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-left: 3px solid;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
 }
 
 /* ── Scrollbar ── */
