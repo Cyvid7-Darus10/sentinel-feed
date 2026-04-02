@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+:root {
+  --bg-base: #0a0a0c;
+  --bg-primary: #101114;
+  --bg-panel: #161619;
+  --bg-hover: #222226;
+  --border: #252528;
+  --text-primary: #c8c8cc;
+  --text-bright: #ededf0;
+  --text-secondary: #7a7a80;
+  --text-muted: #454549;
+  --success: #4ade80;
+  --warning: #eab308;
+  --danger: #ef4444;
+  --info: #94a3b8;
+}
+
+@theme inline {
+  --color-bg-base: var(--bg-base);
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-panel: var(--bg-panel);
+  --color-bg-hover: var(--bg-hover);
+  --color-border: var(--border);
+  --color-text-primary: var(--text-primary);
+  --color-text-bright: var(--text-bright);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* CRT Scanlines Overlay */
+.scanlines::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.08) 2px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-base);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Glow effect on hover */
+.glow-hover {
+  transition: box-shadow 0.2s ease;
+}
+
+.glow-hover:hover {
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.15);
+}
+
+/* Pulse animation for status dots */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* Source badge colors */
+.badge-hn {
+  background: #ff6600;
+  color: #000;
+}
+
+.badge-gh {
+  background: #8b5cf6;
+  color: #fff;
+}
