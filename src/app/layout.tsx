@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: '%s | Sentinel Feed',
   },
   description:
-    'AI-curated tech news radar. Stories from Hacker News, GitHub Trending, Lobsters, Dev.to — filtered, summarized, and categorized in real time. Stay current in 5 minutes.',
+    'AI-curated tech news radar. Stories from Hacker News, GitHub Trending, Lobsters, Dev.to, daily.dev, Techmeme, and InfoQ — filtered, summarized, and categorized in real time. Stay current in 5 minutes.',
   keywords: [
     'tech news',
     'hacker news',
@@ -34,6 +34,9 @@ export const metadata: Metadata = {
     'programming news',
     'dev.to',
     'lobsters',
+    'daily.dev',
+    'techmeme',
+    'infoq',
   ],
   authors: [{ name: 'Sentinel Feed' }],
   creator: 'Sentinel Feed',
@@ -48,7 +51,7 @@ export const metadata: Metadata = {
     siteName: 'Sentinel Feed',
     title: 'Sentinel Feed — Tech Intelligence Radar',
     description:
-      'AI-curated tech news radar. Stories from Hacker News, GitHub Trending, Lobsters, Dev.to — filtered and summarized in real time.',
+      'AI-curated tech news radar. Stories from Hacker News, GitHub Trending, Lobsters, Dev.to, daily.dev, Techmeme, and InfoQ — filtered and summarized in real time.',
     images: [
       {
         url: '/og-image.png',
@@ -62,7 +65,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Sentinel Feed — Tech Intelligence Radar',
     description:
-      'AI-curated tech news from HN, GitHub Trending, Lobsters, Dev.to. Stay current in 5 minutes.',
+      'AI-curated tech news from HN, GitHub Trending, Lobsters, Dev.to, daily.dev, Techmeme, and InfoQ. Stay current in 5 minutes.',
     images: ['/og-image.png'],
   },
   robots: {
