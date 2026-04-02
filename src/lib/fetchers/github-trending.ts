@@ -10,7 +10,6 @@ interface TrendingRepo {
   description: string;
   language: string;
   starsToday: number;
-  totalStars: number;
   url: string;
 }
 
@@ -91,17 +90,12 @@ function parseTrendingHtml(html: string): TrendingRepo[] {
       ? parseInt(starsMatch[1].replace(/,/g, ''), 10)
       : 0;
 
-    const totalStarsEl = $el.find('a.Link--muted[href$="/stargazers"]');
-    const totalStarsText = totalStarsEl.text().trim().replace(/,/g, '');
-    const totalStars = parseInt(totalStarsText, 10) || 0;
-
     repos.push({
       owner,
       repo,
       description,
       language,
       starsToday,
-      totalStars,
       url: `https://github.com${repoLink}`,
     });
   });

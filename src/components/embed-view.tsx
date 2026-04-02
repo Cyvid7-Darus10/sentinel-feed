@@ -4,15 +4,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Story, SourceHealth } from '@/lib/types';
 import { TOPICS, categorizeTopic } from '@/lib/topics';
 import { getSourceConfig, formatScore } from '@/lib/sources';
+import { isCritical } from '@/lib/classification';
 import { relativeTime, isSafeUrl } from '@/lib/utils';
-
-const CRITICAL_PATTERN =
-  /cve[-\s]?\d|vulnerab|exploit|zero.?day|breach|ransomware|backdoor|rce\b|remote.?code|critical.?(flaw|bug|patch|update)|supply.?chain.?attack/i;
-
-function isCritical(story: Story): boolean {
-  const text = `${story.title} ${story.summary ?? ''} ${story.description ?? ''}`;
-  return CRITICAL_PATTERN.test(text);
-}
 
 interface EmbedViewProps {
   readonly initialStories: readonly Story[];

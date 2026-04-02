@@ -1,9 +1,10 @@
 import { TacticalMap } from '@/components/tactical-map';
 import { readStoriesForDays, readSourceHealth } from '@/lib/storage';
+import { SITE_URL } from '@/lib/config';
 
 export const dynamic = 'force-dynamic';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://sentinel-feed.pastelero.ph';
+const siteUrl = SITE_URL;
 
 function JsonLd() {
   const structuredData = {

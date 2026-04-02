@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { JetBrains_Mono } from 'next/font/google';
 import './globals.css';
+import { SITE_URL } from '@/lib/config';
 
 const jetbrainsMono = JetBrains_Mono({
   variable: '--font-mono',
@@ -8,7 +9,7 @@ const jetbrainsMono = JetBrains_Mono({
   display: 'swap',
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://sentinel-feed.pastelero.ph';
+const siteUrl = SITE_URL;
 
 export const viewport: Viewport = {
   themeColor: '#0a0a0c',

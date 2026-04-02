@@ -2,22 +2,14 @@
 
 import { useState, useMemo, useRef, useCallback } from 'react';
 import type { Story } from '@/lib/types';
-import type { Topic } from '@/lib/topics';
 import { TOPICS, categorizeTopic } from '@/lib/topics';
 import { getSourceConfig, formatScore } from '@/lib/sources';
+import { isCritical } from '@/lib/classification';
 import { relativeTime, isSafeUrl } from '@/lib/utils';
 
 interface RadarViewProps {
   readonly stories: readonly Story[];
   readonly onSelectTopic: (topicId: string) => void;
-}
-
-const CRITICAL_PATTERN =
-  /cve[-\s]?\d|vulnerab|exploit|zero.?day|breach|ransomware|backdoor|rce\b|remote.?code|critical.?(flaw|bug|patch|update)|supply.?chain.?attack/i;
-
-function isCritical(story: Story): boolean {
-  const text = `${story.title} ${story.summary ?? ''} ${story.description ?? ''}`;
-  return CRITICAL_PATTERN.test(text);
 }
 
 // ── Seeded PRNG for deterministic but random-looking placement ──
