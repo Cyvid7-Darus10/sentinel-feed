@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readStoriesForDays } from '@/lib/storage';
 import type { SourceId } from '@/lib/types';
 
-const VALID_SOURCES = new Set<string>(['hackernews', 'github-trending', 'lobsters']);
+const VALID_SOURCES = new Set<string>(['hackernews', 'github-trending', 'lobsters', 'devto', 'reddit']);
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;

@@ -14,6 +14,10 @@ function sourceBadge(source: string): { label: string; className: string } {
       return { label: 'GH', className: 'badge-gh' };
     case 'lobsters':
       return { label: 'LO', className: 'badge-lo' };
+    case 'devto':
+      return { label: 'DEV', className: 'badge-dev' };
+    case 'reddit':
+      return { label: 'RD', className: 'badge-rd' };
     default:
       return { label: source.slice(0, 2).toUpperCase(), className: 'bg-info text-black' };
   }
@@ -22,6 +26,7 @@ function sourceBadge(source: string): { label: string; className: string } {
 function formatScore(story: Story): string | null {
   if (story.score === null || story.score === 0) return null;
   if (story.source === 'github-trending') return `${story.score.toLocaleString()} \u2605`;
+  if (story.source === 'devto') return `${story.score.toLocaleString()} \u2764`;
   return `${story.score.toLocaleString()} pts`;
 }
 

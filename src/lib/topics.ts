@@ -19,6 +19,8 @@ export function categorizeTopic(story: Story): string {
   const text =
     `${story.title} ${story.description ?? ''} ${story.tags.join(' ')}`.toLowerCase();
 
+  if (story.tags.includes('netsec')) return 'security';
+
   if (
     /secur|vulnerab|leak|exploit|cve|breach|privacy|malware|ransomware|phishing|auth[oz]/.test(
       text
@@ -39,6 +41,8 @@ export function categorizeTopic(story: Story): string {
     )
   )
     return 'systems';
+
+  if (story.tags.includes('devops')) return 'tools';
 
   if (
     /docker|k8s|kubernetes|ci\/?cd|deploy|aws|cloud|devops|terraform|vercel|netlify|monitoring|sre|nginx|infra/.test(
