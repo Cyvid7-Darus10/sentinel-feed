@@ -17,7 +17,7 @@ export async function readTodayStories(): Promise<Story[]> {
   return readStoriesForDate(todayKey());
 }
 
-export async function readStoriesForDate(dateKey: string): Promise<Story[]> {
+async function readStoriesForDate(dateKey: string): Promise<Story[]> {
   try {
     const blobUrl = await findBlobUrl(feedPath(dateKey));
     if (!blobUrl) return [];

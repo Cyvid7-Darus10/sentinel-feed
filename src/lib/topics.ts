@@ -1,6 +1,6 @@
 import type { Story } from './types';
 
-export interface Topic {
+interface Topic {
   readonly id: string;
   readonly label: string;
   readonly color: string;
@@ -15,7 +15,7 @@ export const TOPICS: readonly Topic[] = [
   { id: 'general', label: 'GENERAL', color: '#94a3b8' },
 ];
 
-export function categorizeTopic(story: Story): string {
+function categorizeTopic(story: Story): string {
   const text =
     `${story.title} ${story.description ?? ''} ${story.tags.join(' ')}`.toLowerCase();
 
