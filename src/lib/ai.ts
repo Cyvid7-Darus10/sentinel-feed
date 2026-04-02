@@ -2,6 +2,7 @@ import { generateText } from 'ai';
 import type { Story } from './types';
 
 const MODEL = 'anthropic/claude-haiku-4.5';
+const MAX_BATCH_SIZE = 50;
 
 interface AiResult {
   readonly relevant: boolean;
@@ -13,13 +14,24 @@ export async function enrichStories(
 ): Promise<Story[]> {
   if (stories.length === 0) return [];
 
+  // Skip AI if explicitly disabled
+  if (process.env.ENABLE_AI_ENRICHMENT === 'false') {
+    return [...stories];
+  }
+
+  // Cap batch size to control costs
+  const toEnrich = stories.slice(0, MAX_BATCH_SIZE);
+  const skipped = stories.slice(MAX_BATCH_SIZE);
+
   try {
-    const results = await batchAnalyze(stories);
-    return stories.map((story, i) => ({
+    const results = await batchAnalyze(toEnrich);
+    const enriched = toEnrich.map((story, i) => ({
       ...story,
       relevant: results[i]?.relevant ?? true,
       summary: results[i]?.summary ?? null,
     }));
+    // Stories beyond the cap pass through without AI — still saved
+    return [...enriched, ...skipped];
   } catch {
     // If AI fails, return stories without summaries — still useful
     return [...stories];
