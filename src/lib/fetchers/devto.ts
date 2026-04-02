@@ -1,4 +1,6 @@
 import type { Story } from '../types';
+import { createStory } from './create-story';
+import { FETCHER_TIMEOUT_MS } from '../config';
 
 const DEVTO_API = 'https://dev.to/api/articles';
 
@@ -22,7 +24,7 @@ export async function fetchDevto(): Promise<Story[]> {
   // top=1 means "top articles from the last 1 day"
   const res = await fetch(`${DEVTO_API}?top=1&per_page=30`, {
     headers: { Accept: 'application/json' },
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(FETCHER_TIMEOUT_MS),
   });
 
   if (!res.ok) {
@@ -35,20 +37,16 @@ export async function fetchDevto(): Promise<Story[]> {
   for (const article of articles) {
     if (!article.title || !article.url) continue;
 
-    stories.push({
+    stories.push(createStory('devto', {
       id: `dev-${article.id}`,
-      source: 'devto',
       title: article.title,
       url: article.url,
       score: article.public_reactions_count,
-      author: article.user?.username ?? null,
+      author: article.user?.username,
       description: article.description || null,
-      tags: article.tag_list ?? [],
-      summary: null,
-      relevant: true,
-      fetchedAt: new Date().toISOString(),
-      publishedAt: article.published_at ?? null,
-    });
+      tags: article.tag_list,
+      publishedAt: article.published_at,
+    }));
   }
 
   return stories;

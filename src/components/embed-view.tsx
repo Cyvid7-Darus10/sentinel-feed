@@ -5,6 +5,7 @@ import type { Story, SourceHealth } from '@/lib/types';
 import { TOPICS, categorizeTopic } from '@/lib/topics';
 import { getSourceConfig, formatScore } from '@/lib/sources';
 import { isCritical } from '@/lib/classification';
+import { DEFAULT_TOPIC_COLOR, CRITICAL_COLOR, API } from '@/lib/config';
 import { relativeTime, isSafeUrl } from '@/lib/utils';
 
 interface EmbedViewProps {
@@ -17,7 +18,7 @@ function CompactStory({ story }: { readonly story: Story }) {
   const score = formatScore(story.source, story.score);
   const critical = isCritical(story);
   const topicId = categorizeTopic(story);
-  const topicColor = TOPICS.find((t) => t.id === topicId)?.color ?? '#94a3b8';
+  const topicColor = TOPICS.find((t) => t.id === topicId)?.color ?? DEFAULT_TOPIC_COLOR;
 
   return (
     <a
@@ -32,7 +33,7 @@ function CompactStory({ story }: { readonly story: Story }) {
       <div className="min-w-0 flex-1">
         <p
           className="text-[12px] font-medium leading-snug text-text-bright"
-          style={critical ? { color: '#f87171' } : undefined}
+          style={critical ? { color: CRITICAL_COLOR } : undefined}
         >
           {critical && <span className="mr-1">!!</span>}
           {story.title}
@@ -59,7 +60,7 @@ export function EmbedView({ initialStories, initialHealth }: EmbedViewProps) {
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const res = await fetch('/api/stories?days=1');
+        const res = await fetch(API.stories(1));
         if (res.ok) {
           const data = await res.json();
           setStories(data.stories);

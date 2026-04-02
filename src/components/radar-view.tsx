@@ -3,9 +3,10 @@
 import { useState, useMemo, useRef, useCallback } from 'react';
 import type { Story } from '@/lib/types';
 import { TOPICS, categorizeTopic } from '@/lib/topics';
-import { getSourceConfig, formatScore } from '@/lib/sources';
 import { isCritical } from '@/lib/classification';
-import { relativeTime, isSafeUrl } from '@/lib/utils';
+import { CRITICAL_COLOR, CRITICAL_COLOR_LIGHT, ACCENT_GREEN } from '@/lib/config';
+import { isSafeUrl } from '@/lib/utils';
+import { StoryTooltip } from './story-tooltip';
 
 interface RadarViewProps {
   readonly stories: readonly Story[];
@@ -161,50 +162,6 @@ function plotStories(
   return plotted;
 }
 
-function TooltipContent({
-  story,
-  topicColor,
-}: {
-  readonly story: Story;
-  readonly topicColor: string;
-}) {
-  const src = getSourceConfig(story.source);
-  const score = formatScore(story.source, story.score);
-  return (
-    <div className="radar-tooltip-inner" style={{ borderColor: topicColor }}>
-      <p className="text-[13px] font-medium leading-snug text-text-bright">
-        {story.title}
-      </p>
-      {story.summary && (
-        <p className="mt-1.5 text-[12px] leading-relaxed text-text-secondary">
-          {story.summary}
-        </p>
-      )}
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-text-muted">
-        <span className={`badge ${src.badgeClass}`}>
-          {src.badge}
-        </span>
-        {story.author && <span>{story.author}</span>}
-        <span>{relativeTime(story.publishedAt ?? story.fetchedAt)}</span>
-        {score && (
-          <span className="font-semibold" style={{ color: topicColor }}>
-            {score}
-          </span>
-        )}
-      </div>
-      {story.tags.length > 0 && (
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
-          {story.tags.slice(0, 5).map((tag) => (
-            <span key={tag} className="text-[10px] font-medium" style={{ color: topicColor }}>
-              {tag}
-            </span>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredStory, setHoveredStory] = useState<PlottedStory | null>(null);
@@ -307,14 +264,14 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
         <defs>
           {/* Sweep trail conic gradient approximation */}
           <linearGradient id="sweep-trail" gradientTransform="rotate(0)">
-            <stop offset="0%" stopColor="#34d399" stopOpacity="0.12" />
-            <stop offset="100%" stopColor="#34d399" stopOpacity="0" />
+            <stop offset="0%" stopColor={ACCENT_GREEN} stopOpacity="0.12" />
+            <stop offset="100%" stopColor={ACCENT_GREEN} stopOpacity="0" />
           </linearGradient>
           {/* Critical glow */}
           <radialGradient id="critical-glow">
-            <stop offset="0%" stopColor="#f87171" stopOpacity="0.7" />
-            <stop offset="50%" stopColor="#f87171" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#f87171" stopOpacity="0" />
+            <stop offset="0%" stopColor={CRITICAL_COLOR} stopOpacity="0.7" />
+            <stop offset="50%" stopColor={CRITICAL_COLOR} stopOpacity="0.2" />
+            <stop offset="100%" stopColor={CRITICAL_COLOR} stopOpacity="0" />
           </radialGradient>
           {/* Dot glow per topic */}
           {TOPICS.map((topic) => (
@@ -412,7 +369,7 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
           {/* Sweep trail wedge */}
           <path
             d={sectorPath(cx, cy, outerR, -0.7, 0)}
-            fill="#34d399"
+            fill={ACCENT_GREEN}
             opacity="0.04"
           />
           {/* Sweep line */}
@@ -421,7 +378,7 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
             y1={cy}
             x2={cx + outerR}
             y2={cy}
-            stroke="#34d399"
+            stroke={ACCENT_GREEN}
             strokeWidth="1.5"
             opacity="0.4"
           />
@@ -463,14 +420,14 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
                 cx={p.x}
                 cy={p.y}
                 r={p.dotR}
-                fill={p.critical ? '#f87171' : p.topicColor}
-                stroke={p.critical ? '#fca5a5' : `${p.topicColor}80`}
+                fill={p.critical ? CRITICAL_COLOR : p.topicColor}
+                stroke={p.critical ? CRITICAL_COLOR_LIGHT : `${p.topicColor}80`}
                 strokeWidth={p.critical ? 1.5 : 0.5}
                 className="radar-dot pointer-events-none"
                 style={{
                   animationDelay: `${blinkDelay}s`,
-                  filter: p.critical ? 'drop-shadow(0 0 6px #f87171)' : `drop-shadow(0 0 2px ${p.topicColor})`,
-                  '--dot-color': p.critical ? '#f87171' : p.topicColor,
+                  filter: p.critical ? `drop-shadow(0 0 6px ${CRITICAL_COLOR})` : `drop-shadow(0 0 2px ${p.topicColor})`,
+                  '--dot-color': p.critical ? CRITICAL_COLOR : p.topicColor,
                 } as React.CSSProperties}
               />
             </g>
@@ -478,10 +435,10 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
         })}
 
         {/* ── Center crosshair ── */}
-        <circle cx={cx} cy={cy} r="4" fill="none" stroke="#34d399" strokeWidth="1" opacity="0.5" />
-        <circle cx={cx} cy={cy} r="1.5" fill="#34d399" opacity="0.8" />
-        <line x1={cx - 10} y1={cy} x2={cx + 10} y2={cy} stroke="#34d399" strokeWidth="0.5" opacity="0.4" />
-        <line x1={cx} y1={cy - 10} x2={cx} y2={cy + 10} stroke="#34d399" strokeWidth="0.5" opacity="0.4" />
+        <circle cx={cx} cy={cy} r="4" fill="none" stroke={ACCENT_GREEN} strokeWidth="1" opacity="0.5" />
+        <circle cx={cx} cy={cy} r="1.5" fill={ACCENT_GREEN} opacity="0.8" />
+        <line x1={cx - 10} y1={cy} x2={cx + 10} y2={cy} stroke={ACCENT_GREEN} strokeWidth="0.5" opacity="0.4" />
+        <line x1={cx} y1={cy - 10} x2={cx} y2={cy + 10} stroke={ACCENT_GREEN} strokeWidth="0.5" opacity="0.4" />
 
         {/* ── Sector labels ── */}
         {TOPICS.map((topic, i) => {
@@ -537,7 +494,7 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
           }}
         >
           <div className="max-sm:w-full">
-            <TooltipContent story={hoveredStory.story} topicColor={hoveredStory.topicColor} />
+            <StoryTooltip story={hoveredStory.story} topicColor={hoveredStory.topicColor} className="radar-tooltip-inner" />
           </div>
         </div>
       )}
@@ -545,7 +502,7 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
       {/* Legend — single centered bar */}
       <div className="absolute bottom-0 left-0 right-0 z-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-border/50 bg-bg-base/80 px-3 py-2 text-[10px] text-text-muted backdrop-blur-sm">
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-full bg-danger" style={{ boxShadow: '0 0 4px #f87171' }} />
+          <span className="inline-block h-2.5 w-2.5 rounded-full bg-danger" style={{ boxShadow: `0 0 4px ${CRITICAL_COLOR}` }} />
           CRITICAL
         </span>
         <span className="hidden text-border sm:inline">|</span>

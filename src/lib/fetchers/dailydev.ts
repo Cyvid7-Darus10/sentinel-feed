@@ -1,4 +1,6 @@
 import type { Story } from '../types';
+import { createStory } from './create-story';
+import { FETCHER_TIMEOUT_MS } from '../config';
 
 const DAILYDEV_API = 'https://api.daily.dev/graphql';
 const POSTS_LIMIT = 25;
@@ -48,7 +50,7 @@ export async function fetchDailyDev(): Promise<Story[]> {
       Accept: 'application/json',
     },
     body: JSON.stringify({ query: QUERY }),
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(FETCHER_TIMEOUT_MS),
   });
 
   if (!res.ok) {
@@ -67,20 +69,15 @@ export async function fetchDailyDev(): Promise<Story[]> {
   for (const { node } of edges) {
     if (!node.title || !node.url) continue;
 
-    stories.push({
+    stories.push(createStory('dailydev', {
       id: `dd-${node.id}`,
-      source: 'dailydev',
       title: node.title,
       url: node.url,
       score: node.numUpvotes,
-      author: node.source?.name ?? null,
-      description: null,
-      tags: node.tags ?? [],
-      summary: null,
-      relevant: true,
-      fetchedAt: new Date().toISOString(),
-      publishedAt: node.createdAt ?? null,
-    });
+      author: node.source?.name,
+      tags: node.tags,
+      publishedAt: node.createdAt,
+    }));
   }
 
   return stories;

@@ -1,4 +1,6 @@
 import type { Story } from '../types';
+import { createStory } from './create-story';
+import { FETCHER_TIMEOUT_MS } from '../config';
 
 const LOBSTERS_API = 'https://lobste.rs/hottest.json';
 
@@ -18,7 +20,7 @@ interface LobstersItem {
 export async function fetchLobsters(): Promise<Story[]> {
   const res = await fetch(LOBSTERS_API, {
     headers: { Accept: 'application/json' },
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(FETCHER_TIMEOUT_MS),
   });
 
   if (!res.ok) {
@@ -33,20 +35,16 @@ export async function fetchLobsters(): Promise<Story[]> {
     const url = item.url || item.comments_url;
     if (!url) continue;
 
-    stories.push({
+    stories.push(createStory('lobsters', {
       id: `lo-${item.short_id}`,
-      source: 'lobsters',
       title: item.title,
       url,
       score: item.score,
-      author: item.submitter_user ?? null,
+      author: item.submitter_user,
       description: item.description_plain || null,
-      tags: item.tags ?? [],
-      summary: null,
-      relevant: true,
-      fetchedAt: new Date().toISOString(),
-      publishedAt: item.created_at ?? null,
-    });
+      tags: item.tags,
+      publishedAt: item.created_at,
+    }));
   }
 
   return stories;

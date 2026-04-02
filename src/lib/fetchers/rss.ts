@@ -1,5 +1,7 @@
 import * as cheerio from 'cheerio';
 import type { Story, SourceId } from '../types';
+import { createStory } from './create-story';
+import { FETCHER_TIMEOUT_MS } from '../config';
 
 interface RssParseOptions {
   readonly sourceId: SourceId;
@@ -17,7 +19,7 @@ export async function fetchRssFeed({
       Accept: 'application/rss+xml, application/xml, text/xml',
       'User-Agent': 'SentinelFeed/1.0',
     },
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(FETCHER_TIMEOUT_MS),
   });
 
   if (!res.ok) {
@@ -72,20 +74,15 @@ function parseRss(
 
     const publishedAt = pubDate ? safeDate(pubDate) : null;
 
-    stories.push({
+    stories.push(createStory(sourceId, {
       id: `${sourceId}-${hashCode(link)}`,
-      source: sourceId,
       title,
       url: link,
-      score: null,
       author: author || null,
       description,
       tags: tags.slice(0, 5),
-      summary: null,
-      relevant: true,
-      fetchedAt: new Date().toISOString(),
       publishedAt,
-    });
+    }));
   });
 
   return stories;

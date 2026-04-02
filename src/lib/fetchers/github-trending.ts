@@ -1,5 +1,7 @@
 import * as cheerio from 'cheerio';
 import type { Story } from '../types';
+import { createStory } from './create-story';
+import { FETCHER_TIMEOUT_MS } from '../config';
 
 const GITHUB_TRENDING_URL = 'https://github.com/trending';
 const LANGUAGES = ['typescript', 'python', 'go', 'rust'];
@@ -28,20 +30,15 @@ export async function fetchGithubTrending(): Promise<Story[]> {
       if (seen.has(key)) continue;
       seen.add(key);
 
-      stories.push({
+      stories.push(createStory('github-trending', {
         id: `gh-${repo.owner}-${repo.repo}`,
-        source: 'github-trending',
         title: `${repo.owner}/${repo.repo}`,
         url: repo.url,
         score: repo.starsToday,
         author: repo.owner,
         description: repo.description || null,
         tags: repo.language ? [repo.language.toLowerCase()] : [],
-        summary: null,
-        relevant: true,
-        fetchedAt: new Date().toISOString(),
-        publishedAt: null,
-      });
+      }));
     }
   }
 
@@ -54,7 +51,7 @@ async function fetchLanguage(language: string): Promise<TrendingRepo[]> {
       'User-Agent': 'SentinelFeed/1.0',
       Accept: 'text/html',
     },
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(FETCHER_TIMEOUT_MS),
   });
 
   if (!res.ok) {

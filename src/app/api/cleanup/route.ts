@@ -1,22 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { deleteOldBlobs } from '@/lib/storage';
-
-const RETENTION_DAYS = 7;
+import { verifyCronAuth } from '@/lib/cron-auth';
+import { RETENTION_DAYS } from '@/lib/config';
 
 export const maxDuration = 30;
 
 export async function GET(request: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET;
-  const authHeader = request.headers.get('authorization');
-
-  if (!cronSecret) {
-    console.error('[cleanup] CRON_SECRET env var is not set');
-    return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
-  }
-
-  if (authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const authError = verifyCronAuth(request);
+  if (authError) return authError;
 
   try {
     const deleted = await deleteOldBlobs(RETENTION_DAYS);

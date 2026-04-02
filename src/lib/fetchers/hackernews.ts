@@ -1,8 +1,9 @@
 import type { Story } from '../types';
+import { createStory } from './create-story';
+import { FETCHER_TIMEOUT_MS } from '../config';
 
 const HN_API = 'https://hacker-news.firebaseio.com/v0';
 const TOP_STORIES_LIMIT = 30;
-const REQUEST_TIMEOUT = 10_000;
 
 interface HNItem {
   id: number;
@@ -18,7 +19,7 @@ interface HNItem {
 
 export async function fetchHackerNews(): Promise<Story[]> {
   const res = await fetch(`${HN_API}/topstories.json`, {
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT),
+    signal: AbortSignal.timeout(FETCHER_TIMEOUT_MS),
   });
   if (!res.ok) {
     throw new Error(`HN API error: ${res.status}`);
@@ -37,22 +38,17 @@ export async function fetchHackerNews(): Promise<Story[]> {
     const item = result.value;
     if (!item.title || !item.url) continue;
 
-    stories.push({
+    stories.push(createStory('hackernews', {
       id: `hn-${item.id}`,
-      source: 'hackernews',
       title: item.title,
       url: item.url,
-      score: item.score ?? null,
-      author: item.by ?? null,
-      description: item.text ?? null,
-      tags: [],
-      summary: null,
-      relevant: true,
-      fetchedAt: new Date().toISOString(),
+      score: item.score,
+      author: item.by,
+      description: item.text,
       publishedAt: item.time
         ? new Date(item.time * 1000).toISOString()
         : null,
-    });
+    }));
   }
 
   return stories;
@@ -61,7 +57,7 @@ export async function fetchHackerNews(): Promise<Story[]> {
 async function fetchItem(id: number): Promise<HNItem | null> {
   try {
     const res = await fetch(`${HN_API}/item/${id}.json`, {
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT),
+      signal: AbortSignal.timeout(FETCHER_TIMEOUT_MS),
     });
     if (!res.ok) return null;
     return (await res.json()) as HNItem;

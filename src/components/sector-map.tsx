@@ -5,6 +5,7 @@ import type { Topic } from '@/lib/topics';
 import { TOPICS, categorizeStories } from '@/lib/topics';
 import { getSourceConfig, formatScore } from '@/lib/sources';
 import { relativeTime, isSafeUrl } from '@/lib/utils';
+import { StoryTooltip } from './story-tooltip';
 import { useMemo } from 'react';
 
 interface SectorMapProps {
@@ -87,41 +88,7 @@ function Sector({
                 </div>
               </a>
               {/* Tooltip */}
-              <div className="story-tooltip" style={{ borderColor: topic.color }}>
-                <p className="text-[13px] font-medium leading-snug text-text-bright">
-                  {story.title}
-                </p>
-                {story.summary && (
-                  <p className="mt-1.5 text-[12px] leading-relaxed text-text-secondary">
-                    {story.summary}
-                  </p>
-                )}
-                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-text-muted">
-                  <span className={`badge ${src.badgeClass}`}>
-                    {src.badge}
-                  </span>
-                  {story.author && <span>{story.author}</span>}
-                  <span>{relativeTime(story.publishedAt ?? story.fetchedAt)}</span>
-                  {score && (
-                    <span className="font-semibold" style={{ color: topic.color }}>
-                      {score}
-                    </span>
-                  )}
-                </div>
-                {story.tags.length > 0 && (
-                  <div className="mt-1.5 flex flex-wrap gap-1.5">
-                    {story.tags.slice(0, 5).map((tag) => (
-                      <span
-                        key={tag}
-                        className="text-[10px] font-medium"
-                        style={{ color: topic.color }}
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <StoryTooltip story={story} topicColor={topic.color} className="story-tooltip" />
             </div>
           );
         })}

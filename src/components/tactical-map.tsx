@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Story, SourceId, SourceHealth } from '@/lib/types';
 import { TOPICS, categorizeStories, categorizeTopic } from '@/lib/topics';
 import { SOURCE_FILTER_OPTIONS } from '@/lib/sources';
+import { DEFAULT_TOPIC_COLOR, ACCENT_GREEN, API, REFRESH_INTERVAL_MS } from '@/lib/config';
 import { relativeTime } from '@/lib/utils';
 import { StoryNode } from './story-node';
 import { SectorMap } from './sector-map';
@@ -69,8 +70,8 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
       try {
         const days = timeRangeToDays(activeRange);
         const [storiesRes, healthRes] = await Promise.all([
-          fetch(`/api/stories?days=${days}`),
-          fetch('/api/sources'),
+          fetch(API.stories(days)),
+          fetch(API.sources),
         ]);
         if (storiesRes.status === 429 || healthRes.status === 429) {
           setRateLimited(true);
@@ -88,7 +89,7 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
       } catch {
         // next poll retries
       }
-    }, 60_000);
+    }, REFRESH_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [activeRange]);
 
@@ -140,10 +141,10 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
   const getTopicColor = useCallback(
     (story: Story): string => {
       if (activeTopic) {
-        return TOPICS.find((t) => t.id === activeTopic)?.color ?? '#94a3b8';
+        return TOPICS.find((t) => t.id === activeTopic)?.color ?? DEFAULT_TOPIC_COLOR;
       }
       const topicId = categorizeTopic(story);
-      return TOPICS.find((t) => t.id === topicId)?.color ?? '#94a3b8';
+      return TOPICS.find((t) => t.id === topicId)?.color ?? DEFAULT_TOPIC_COLOR;
     },
     [activeTopic]
   );
@@ -307,7 +308,7 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
             <button
               onClick={() => setActiveTopic(null)}
               className={`topic-tab ${!activeTopic ? 'topic-tab-active' : ''}`}
-              style={{ '--tab-color': '#34d399' } as React.CSSProperties}
+              style={{ '--tab-color': ACCENT_GREEN } as React.CSSProperties}
             >
               ALL
               <span className="ml-1.5 text-[10px] opacity-50">{filtered.length}</span>

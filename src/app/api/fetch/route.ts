@@ -9,6 +9,7 @@ import {
 } from '@/lib/storage';
 import type { SourceHealth, Story } from '@/lib/types';
 import { getSourceDisplayName } from '@/lib/sources';
+import { verifyCronAuth } from '@/lib/cron-auth';
 
 // Allow up to 60s for fetching all sources + AI enrichment
 export const maxDuration = 60;
@@ -16,18 +17,8 @@ export const maxDuration = 60;
 export async function GET(request: NextRequest) {
   console.log('[fetch] Cron invoked at', new Date().toISOString());
 
-  const cronSecret = process.env.CRON_SECRET;
-  const authHeader = request.headers.get('authorization');
-
-  if (!cronSecret) {
-    console.error('[fetch] CRON_SECRET env var is not set');
-    return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
-  }
-
-  if (authHeader !== `Bearer ${cronSecret}`) {
-    console.warn('[fetch] Auth failed — header present:', !!authHeader);
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const authError = verifyCronAuth(request);
+  if (authError) return authError;
 
   try {
     console.log('[fetch] Auth passed, starting pipeline');
