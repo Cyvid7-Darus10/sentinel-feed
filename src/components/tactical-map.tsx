@@ -346,8 +346,13 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
       )}
 
       {/* ── Footer ── */}
-      <footer className="border-t border-border bg-bg-primary px-5 py-1.5 text-center text-[10px] text-text-muted">
-        {displayStories.length} of {stories.length} stories — auto-refresh 60s
+      <footer className="flex items-center justify-between border-t border-border bg-bg-primary px-5 py-1.5 text-[10px] text-text-muted">
+        <span>{displayStories.length} of {stories.length} stories — auto-refresh 60s</span>
+        <nav className="flex gap-3" aria-label="Legal">
+          <a href="/privacy" className="transition-colors hover:text-text-secondary">Privacy</a>
+          <a href="/terms" className="transition-colors hover:text-text-secondary">Terms</a>
+          <a href="/accessibility" className="transition-colors hover:text-text-secondary">Accessibility</a>
+        </nav>
       </footer>
     </div>
   );
