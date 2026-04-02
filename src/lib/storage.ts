@@ -48,6 +48,7 @@ export async function writeTodayStories(stories: readonly Story[]): Promise<void
     access: 'public',
     contentType: 'application/json',
     addRandomSuffix: false,
+    allowOverwrite: true,
   });
 }
 
@@ -68,6 +69,7 @@ export async function writeSourceHealth(health: SourceHealth): Promise<void> {
     access: 'public',
     contentType: 'application/json',
     addRandomSuffix: false,
+    allowOverwrite: true,
   });
 }
 
