@@ -74,6 +74,7 @@ function sourceDisplayName(source: string): string {
   const names: Record<string, string> = {
     hackernews: 'Hacker News',
     'github-trending': 'GitHub Trending',
+    lobsters: 'Lobsters',
   };
   return names[source] ?? source;
 }

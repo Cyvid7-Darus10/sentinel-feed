@@ -2,6 +2,7 @@ import type { FetchResult, Story } from '../types';
 import { normalizeUrl } from '../utils';
 import { fetchHackerNews } from './hackernews';
 import { fetchGithubTrending } from './github-trending';
+import { fetchLobsters } from './lobsters';
 
 export async function fetchAllSources(
   existingUrls: ReadonlySet<string>
@@ -9,6 +10,7 @@ export async function fetchAllSources(
   const fetchers = [
     { source: 'hackernews' as const, fn: fetchHackerNews },
     { source: 'github-trending' as const, fn: fetchGithubTrending },
+    { source: 'lobsters' as const, fn: fetchLobsters },
   ];
 
   const results = await Promise.allSettled(

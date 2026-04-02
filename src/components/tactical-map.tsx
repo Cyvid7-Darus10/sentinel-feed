@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Story, SourceId, SourceHealth } from '@/lib/types';
 import { TOPICS, categorizeStories } from '@/lib/topics';
 import { relativeTime } from '@/lib/utils';
-import { TopicSector } from './topic-sector';
+import { StoryNode } from './story-node';
 
 type TimeRange = '6h' | '12h' | '24h' | '7d';
 
@@ -34,6 +34,7 @@ const SOURCES: readonly { id: SourceId | null; label: string }[] = [
   { id: null, label: 'ALL' },
   { id: 'hackernews', label: 'HN' },
   { id: 'github-trending', label: 'GH' },
+  { id: 'lobsters', label: 'LO' },
 ];
 
 const TIME_RANGES: readonly { id: TimeRange; label: string }[] = [
@@ -48,9 +49,9 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
   const [health, setHealth] = useState<SourceHealth>(initialHealth);
   const [activeSource, setActiveSource] = useState<SourceId | null>(null);
   const [activeRange, setActiveRange] = useState<TimeRange>('24h');
+  const [activeTopic, setActiveTopic] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Auto-refresh every 60s
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
@@ -74,19 +75,11 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
     return () => clearInterval(interval);
   }, [activeRange]);
 
-  const handleSourceChange = useCallback((source: SourceId | null) => {
-    setActiveSource(source);
-  }, []);
-
-  const handleRangeChange = useCallback((range: TimeRange) => {
-    setActiveRange(range);
-  }, []);
-
   const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   }, []);
 
-  // Filter
+  // Filter by source, time, search
   const filtered = useMemo(() => {
     const now = Date.now();
     const rangeMs = timeRangeToMs(activeRange);
@@ -105,27 +98,52 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
     });
   }, [stories, activeSource, activeRange, searchQuery]);
 
-  // Categorize
+  // Categorize into topics
   const categorized = useMemo(() => categorizeStories(filtered), [filtered]);
 
-  const totalSignals = filtered.length;
+  // Topic counts for tabs
+  const topicCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const topic of TOPICS) {
+      counts[topic.id] = (categorized[topic.id] ?? []).length;
+    }
+    return counts;
+  }, [categorized]);
+
+  // Stories to display (filtered by active topic)
+  const displayStories = useMemo(() => {
+    if (!activeTopic) {
+      // Show all, sorted by score desc
+      return [...filtered].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    }
+    return categorized[activeTopic] ?? [];
+  }, [filtered, activeTopic, categorized]);
+
+  // Get topic color for a story
+  const getTopicColor = useCallback(
+    (story: Story): string => {
+      if (activeTopic) {
+        return TOPICS.find((t) => t.id === activeTopic)?.color ?? '#94a3b8';
+      }
+      for (const topic of TOPICS) {
+        if ((categorized[topic.id] ?? []).includes(story)) return topic.color;
+      }
+      return '#94a3b8';
+    },
+    [activeTopic, categorized]
+  );
+
   const sourceCount = Object.keys(health.sources).length;
   const lastUpdate = health.updatedAt ? relativeTime(health.updatedAt) : null;
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
-      {/* ── HUD Bar ── */}
-      <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border bg-bg-primary px-4 py-2">
-        {/* Logo */}
-        <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-success pulse-dot" />
-          <span className="text-[13px] font-bold uppercase tracking-[0.15em] text-text-bright">
-            Sentinel
-          </span>
-          <span className="text-[10px] uppercase text-text-muted">v1.0</span>
-        </div>
+    <div className="flex h-screen flex-col">
+      {/* ── Header Bar ── */}
+      <header className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-border bg-bg-primary px-5 py-2.5">
+        <span className="text-[14px] font-bold uppercase tracking-[0.1em] text-text-bright">
+          Sentinel
+        </span>
 
-        {/* Divider */}
         <div className="hidden h-4 w-px bg-border sm:block" />
 
         {/* Source Filters */}
@@ -133,7 +151,7 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
           {SOURCES.map((s) => (
             <button
               key={s.id ?? 'all'}
-              onClick={() => handleSourceChange(s.id)}
+              onClick={() => setActiveSource(s.id)}
               aria-pressed={activeSource === s.id}
               className={`filter-btn ${
                 activeSource === s.id ? 'filter-btn-active' : 'filter-btn-inactive'
@@ -149,7 +167,7 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
           {TIME_RANGES.map((t) => (
             <button
               key={t.id}
-              onClick={() => handleRangeChange(t.id)}
+              onClick={() => setActiveRange(t.id)}
               aria-pressed={activeRange === t.id}
               className={`filter-btn ${
                 activeRange === t.id ? 'filter-btn-active' : 'filter-btn-inactive'
@@ -161,54 +179,78 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
         </div>
 
         {/* Search */}
-        <div className="flex-1 sm:max-w-[200px]">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={handleSearch}
-            placeholder="Search signals..."
-            className="search-input w-full"
-            aria-label="Search stories"
-          />
-        </div>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={handleSearch}
+          placeholder="Search..."
+          className="search-input w-full sm:w-44"
+          aria-label="Search stories"
+        />
 
         {/* Stats */}
-        <div className="ml-auto flex items-center gap-4 text-[10px] uppercase text-text-secondary">
+        <div className="ml-auto flex items-center gap-4 text-[11px] text-text-secondary">
           <span>
-            <span className="text-text-bright">{totalSignals}</span> signals
+            <span className="text-text-bright">{filtered.length}</span> stories
           </span>
           <span>
-            <span className="text-text-bright">{sourceCount}</span> src
+            <span className="text-text-bright">{sourceCount}</span> sources
           </span>
           {lastUpdate && (
-            <span className="hidden md:inline">
-              upd <span className="text-success">{lastUpdate}</span>
+            <span className="hidden lg:inline">
+              updated <span className="text-success">{lastUpdate}</span>
             </span>
           )}
         </div>
       </header>
 
-      {/* ── Sector Grid ── */}
-      <main className="tactical-bg scan-line flex-1 overflow-auto p-3">
-        <div className="grid h-full auto-rows-fr grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {TOPICS.map((topic) => (
-            <TopicSector
-              key={topic.id}
-              topic={topic}
-              stories={categorized[topic.id] ?? []}
-            />
-          ))}
+      {/* ── Topic Tabs ── */}
+      <nav className="flex gap-0 overflow-x-auto border-b border-border bg-bg-primary px-3">
+        <button
+          onClick={() => setActiveTopic(null)}
+          className={`topic-tab ${!activeTopic ? 'topic-tab-active' : ''}`}
+          style={{ '--tab-color': '#34d399' } as React.CSSProperties}
+        >
+          ALL
+          <span className="ml-1.5 text-[10px] opacity-50">{filtered.length}</span>
+        </button>
+        {TOPICS.map((topic) => (
+          <button
+            key={topic.id}
+            onClick={() => setActiveTopic(activeTopic === topic.id ? null : topic.id)}
+            className={`topic-tab ${activeTopic === topic.id ? 'topic-tab-active' : ''}`}
+            style={{ '--tab-color': topic.color } as React.CSSProperties}
+          >
+            {topic.label}
+            <span className="ml-1.5 text-[10px] opacity-50">
+              {topicCounts[topic.id] ?? 0}
+            </span>
+          </button>
+        ))}
+      </nav>
+
+      {/* ── Story Feed ── */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-3xl">
+          {displayStories.length === 0 ? (
+            <div className="px-5 py-16 text-center text-[12px] text-text-muted">
+              No stories match the current filters.
+            </div>
+          ) : (
+            displayStories.map((story) => (
+              <StoryNode
+                key={story.id}
+                story={story}
+                topicColor={getTopicColor(story)}
+              />
+            ))
+          )}
         </div>
       </main>
 
-      {/* ── Status Bar ── */}
-      <footer className="flex items-center justify-between border-t border-border bg-bg-primary px-4 py-1">
-        <span className="text-[9px] uppercase tracking-[0.15em] text-text-muted">
-          Sentinel Feed — Powered by Claude AI + Vercel
-        </span>
-        <span className="text-[9px] uppercase text-text-muted">
-          auto-refresh 60s
-        </span>
+      {/* ── Footer ── */}
+      <footer className="border-t border-border bg-bg-primary px-5 py-1.5 text-center text-[10px] text-text-muted">
+        {displayStories.length} of {stories.length} stories — auto-refresh 60s
       </footer>
     </div>
   );

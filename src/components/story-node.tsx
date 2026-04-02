@@ -3,8 +3,7 @@ import { relativeTime } from '@/lib/utils';
 
 interface StoryNodeProps {
   readonly story: Story;
-  readonly index: number;
-  readonly maxScore: number;
+  readonly topicColor: string;
 }
 
 function sourceBadge(source: string): { label: string; className: string } {
@@ -13,15 +12,22 @@ function sourceBadge(source: string): { label: string; className: string } {
       return { label: 'HN', className: 'badge-hn' };
     case 'github-trending':
       return { label: 'GH', className: 'badge-gh' };
+    case 'lobsters':
+      return { label: 'LO', className: 'badge-lo' };
     default:
       return { label: source.slice(0, 2).toUpperCase(), className: 'bg-info text-black' };
   }
 }
 
-export function StoryNode({ story, index, maxScore }: StoryNodeProps) {
+function formatScore(story: Story): string | null {
+  if (story.score === null || story.score === 0) return null;
+  if (story.source === 'github-trending') return `${story.score.toLocaleString()} \u2605`;
+  return `${story.score.toLocaleString()} pts`;
+}
+
+export function StoryNode({ story, topicColor }: StoryNodeProps) {
   const badge = sourceBadge(story.source);
-  const score = story.score ?? 0;
-  const barWidth = maxScore > 0 ? Math.max(4, (score / maxScore) * 100) : 0;
+  const scoreText = formatScore(story);
   const displayTime = story.publishedAt ?? story.fetchedAt;
 
   return (
@@ -29,50 +35,36 @@ export function StoryNode({ story, index, maxScore }: StoryNodeProps) {
       href={story.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="story-node"
-      style={{ animationDelay: `${index * 40}ms` }}
+      className="group block border-b border-border px-5 py-3.5 transition-colors hover:bg-bg-hover"
     >
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="line-clamp-2 text-[11px] font-medium leading-snug text-text-bright">
-          {story.title}
-        </h3>
-        {score > 0 && (
-          <span className="score-pip shrink-0" style={{ color: 'var(--sector-color)' }}>
-            {score}
-            <span className="text-[8px] opacity-60">
-              {story.source === 'github-trending' ? '\u2605' : '\u25B2'}
-            </span>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-[13px] font-medium leading-snug text-text-bright group-hover:text-white">
+            {story.title}
+          </h3>
+          {story.summary && (
+            <p className="mt-1 text-[12px] leading-relaxed text-text-secondary">
+              {story.summary}
+            </p>
+          )}
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-text-muted">
+            <span className={`badge ${badge.className}`}>{badge.label}</span>
+            {story.author && <span>{story.author}</span>}
+            <span>{relativeTime(displayTime)}</span>
+            {story.tags.length > 0 && (
+              <span style={{ color: topicColor }}>{story.tags.slice(0, 3).join(', ')}</span>
+            )}
+          </div>
+        </div>
+        {scoreText && (
+          <span
+            className="shrink-0 text-[12px] font-semibold tabular-nums"
+            style={{ color: topicColor }}
+          >
+            {scoreText}
           </span>
         )}
       </div>
-
-      {story.summary && (
-        <p className="mt-1 line-clamp-1 text-[10px] leading-relaxed text-text-secondary">
-          {story.summary}
-        </p>
-      )}
-
-      <div className="mt-1.5 flex items-center gap-2 text-[9px] uppercase text-text-muted">
-        <span className={`px-1 py-px text-[8px] font-bold ${badge.className}`}>
-          {badge.label}
-        </span>
-        {story.author && (
-          <span className="truncate max-w-[80px]">{story.author}</span>
-        )}
-        <span>{relativeTime(displayTime)}</span>
-        {story.tags.length > 0 && (
-          <span className="hidden truncate text-text-secondary sm:inline">
-            {story.tags.slice(0, 2).join(', ')}
-          </span>
-        )}
-      </div>
-
-      {score > 0 && (
-        <div
-          className="score-bar"
-          style={{ width: `${barWidth}%` }}
-        />
-      )}
     </a>
   );
 }

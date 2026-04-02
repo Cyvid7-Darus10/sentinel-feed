@@ -9,12 +9,18 @@ vi.mock('../github-trending', () => ({
   fetchGithubTrending: vi.fn(),
 }));
 
+vi.mock('../lobsters', () => ({
+  fetchLobsters: vi.fn(),
+}));
+
 import { fetchAllSources, buildExistingUrlSet } from '../index';
 import { fetchHackerNews } from '../hackernews';
 import { fetchGithubTrending } from '../github-trending';
+import { fetchLobsters } from '../lobsters';
 
 const mockFetchHN = vi.mocked(fetchHackerNews);
 const mockFetchGH = vi.mocked(fetchGithubTrending);
+const mockFetchLO = vi.mocked(fetchLobsters);
 
 function makeStory(overrides: Partial<Story>): Story {
   return {
@@ -50,13 +56,22 @@ describe('fetchAllSources', () => {
         url: 'https://github.com/a/b',
       }),
     ]);
+    mockFetchLO.mockResolvedValueOnce([
+      makeStory({
+        id: 'lo-1',
+        source: 'lobsters',
+        url: 'https://lobste.rs/s/abc',
+      }),
+    ]);
 
     const results = await fetchAllSources(new Set());
-    expect(results).toHaveLength(2);
+    expect(results).toHaveLength(3);
     expect(results[0].source).toBe('hackernews');
     expect(results[0].stories).toHaveLength(1);
     expect(results[1].source).toBe('github-trending');
     expect(results[1].stories).toHaveLength(1);
+    expect(results[2].source).toBe('lobsters');
+    expect(results[2].stories).toHaveLength(1);
   });
 
   it('deduplicates against existing URLs', async () => {
@@ -65,6 +80,7 @@ describe('fetchAllSources', () => {
       makeStory({ id: 'hn-2', url: 'https://example.com/new' }),
     ]);
     mockFetchGH.mockResolvedValueOnce([]);
+    mockFetchLO.mockResolvedValueOnce([]);
 
     const existing = new Set(['example.com/existing']);
     const results = await fetchAllSources(existing);
@@ -78,6 +94,7 @@ describe('fetchAllSources', () => {
     mockFetchGH.mockResolvedValueOnce([
       makeStory({ id: 'gh-1', source: 'github-trending' }),
     ]);
+    mockFetchLO.mockResolvedValueOnce([]);
 
     const results = await fetchAllSources(new Set());
 
@@ -93,17 +110,20 @@ describe('fetchAllSources', () => {
   it('handles all sources failing', async () => {
     mockFetchHN.mockRejectedValueOnce(new Error('HN error'));
     mockFetchGH.mockRejectedValueOnce(new Error('GH error'));
+    mockFetchLO.mockRejectedValueOnce(new Error('LO error'));
 
     const results = await fetchAllSources(new Set());
 
-    expect(results).toHaveLength(2);
+    expect(results).toHaveLength(3);
     expect(results[0].error).toBe('HN error');
     expect(results[1].error).toBe('GH error');
+    expect(results[2].error).toBe('LO error');
   });
 
   it('handles non-Error throws', async () => {
     mockFetchHN.mockRejectedValueOnce('string error');
     mockFetchGH.mockResolvedValueOnce([]);
+    mockFetchLO.mockResolvedValueOnce([]);
 
     const results = await fetchAllSources(new Set());
     expect(results[0].error).toBe('Unknown error');
