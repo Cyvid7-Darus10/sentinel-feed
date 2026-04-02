@@ -6,8 +6,9 @@ import { TOPICS, categorizeStories } from '@/lib/topics';
 import { relativeTime } from '@/lib/utils';
 import { StoryNode } from './story-node';
 import { SectorMap } from './sector-map';
+import { RadarView } from './radar-view';
 
-type ViewMode = 'list' | 'map';
+type ViewMode = 'list' | 'map' | 'radar';
 
 type TimeRange = '6h' | '12h' | '24h' | '7d';
 
@@ -56,7 +57,7 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
   const [activeRange, setActiveRange] = useState<TimeRange>('24h');
   const [activeTopic, setActiveTopic] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<ViewMode>('map');
+  const [viewMode, setViewMode] = useState<ViewMode>('radar');
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -192,6 +193,14 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
         {/* View Toggle */}
         <div className="flex items-center gap-1">
           <button
+            onClick={() => setViewMode('radar')}
+            aria-pressed={viewMode === 'radar'}
+            className={`filter-btn ${viewMode === 'radar' ? 'filter-btn-active' : 'filter-btn-inactive'}`}
+            title="Radar view"
+          >
+            RADAR
+          </button>
+          <button
             onClick={() => setViewMode('map')}
             aria-pressed={viewMode === 'map'}
             className={`filter-btn ${viewMode === 'map' ? 'filter-btn-active' : 'filter-btn-inactive'}`}
@@ -286,6 +295,12 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
       {viewMode === 'map' && (
         <main className="flex-1 overflow-hidden">
           <SectorMap stories={filtered} onSelectTopic={handleSelectTopic} />
+        </main>
+      )}
+
+      {viewMode === 'radar' && (
+        <main className="flex-1 overflow-hidden">
+          <RadarView stories={filtered} onSelectTopic={handleSelectTopic} />
         </main>
       )}
 

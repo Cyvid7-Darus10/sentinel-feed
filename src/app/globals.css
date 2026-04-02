@@ -220,6 +220,34 @@ body {
   }
 }
 
+/* ── Radar View ── */
+.radar-sweep {
+  animation: radar-spin 6s linear infinite;
+}
+
+@keyframes radar-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.radar-pulse {
+  animation: radar-pulse-anim 2s ease-in-out infinite;
+}
+
+@keyframes radar-pulse-anim {
+  0%, 100% { opacity: 0.4; r: 8; }
+  50% { opacity: 0.8; r: 12; }
+}
+
+.radar-tooltip-inner {
+  width: 300px;
+  padding: 10px 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-left: 3px solid;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
