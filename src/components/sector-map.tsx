@@ -1,6 +1,6 @@
 import type { Story } from '@/lib/types';
 import type { Topic } from '@/lib/topics';
-import { TOPICS, categorizeTopic } from '@/lib/topics';
+import { TOPICS, categorizeStories } from '@/lib/topics';
 import { getSourceConfig, formatScore } from '@/lib/sources';
 import { relativeTime } from '@/lib/utils';
 import { useMemo } from 'react';
@@ -144,20 +144,7 @@ function Sector({
 }
 
 export function SectorMap({ stories, onSelectTopic }: SectorMapProps) {
-  const categorized = useMemo(() => {
-    const result: Record<string, Story[]> = {};
-    for (const topic of TOPICS) {
-      result[topic.id] = [];
-    }
-    for (const story of stories) {
-      const topicId = categorizeTopic(story);
-      result[topicId].push(story);
-    }
-    for (const topic of TOPICS) {
-      result[topic.id].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-    }
-    return result;
-  }, [stories]);
+  const categorized = useMemo(() => categorizeStories(stories), [stories]);
 
   return (
     <div className="sector-grid h-full overflow-y-auto p-0 sm:p-3">

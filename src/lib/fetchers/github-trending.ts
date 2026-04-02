@@ -55,6 +55,7 @@ async function fetchLanguage(language: string): Promise<TrendingRepo[]> {
       'User-Agent': 'SentinelFeed/1.0',
       Accept: 'text/html',
     },
+    signal: AbortSignal.timeout(10_000),
   });
 
   if (!res.ok) {

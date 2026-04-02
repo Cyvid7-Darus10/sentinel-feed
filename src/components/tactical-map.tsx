@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Story, SourceId, SourceHealth } from '@/lib/types';
-import { TOPICS, categorizeStories } from '@/lib/topics';
+import { TOPICS, categorizeStories, categorizeTopic } from '@/lib/topics';
 import { SOURCE_FILTER_OPTIONS } from '@/lib/sources';
 import { relativeTime } from '@/lib/utils';
 import { StoryNode } from './story-node';
@@ -124,12 +124,10 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
       if (activeTopic) {
         return TOPICS.find((t) => t.id === activeTopic)?.color ?? '#94a3b8';
       }
-      for (const topic of TOPICS) {
-        if ((categorized[topic.id] ?? []).includes(story)) return topic.color;
-      }
-      return '#94a3b8';
+      const topicId = categorizeTopic(story);
+      return TOPICS.find((t) => t.id === topicId)?.color ?? '#94a3b8';
     },
-    [activeTopic, categorized]
+    [activeTopic]
   );
 
   const handleSelectTopic = useCallback((topicId: string) => {

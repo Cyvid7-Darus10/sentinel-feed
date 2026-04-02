@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (authHeader !== `Bearer ${cronSecret}`) {
-    console.warn('[fetch] Auth failed — received:', authHeader?.slice(0, 20) ?? 'none');
+    console.warn('[fetch] Auth failed — header present:', !!authHeader);
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
     const message = err instanceof Error ? err.message : 'Internal error';
     const stack = err instanceof Error ? err.stack : undefined;
     console.error('[fetch] Pipeline failed:', message, stack);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 

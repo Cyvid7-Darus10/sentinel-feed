@@ -158,7 +158,7 @@ function plotStories(
         p.y = centerY + dy * scale;
       }
       // Keep outside center dead zone
-      if (dist < radius * 0.1) {
+      if (dist < radius * 0.1 && dist > 0) {
         const scale = (radius * 0.1) / dist;
         p.x = centerX + dx * scale;
         p.y = centerY + dy * scale;

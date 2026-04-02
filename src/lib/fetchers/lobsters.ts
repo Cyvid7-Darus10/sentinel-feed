@@ -18,6 +18,7 @@ interface LobstersItem {
 export async function fetchLobsters(): Promise<Story[]> {
   const res = await fetch(LOBSTERS_API, {
     headers: { Accept: 'application/json' },
+    signal: AbortSignal.timeout(10_000),
   });
 
   if (!res.ok) {
@@ -28,13 +29,15 @@ export async function fetchLobsters(): Promise<Story[]> {
   const stories: Story[] = [];
 
   for (const item of items) {
-    if (!item.title || !item.url) continue;
+    if (!item.title) continue;
+    const url = item.url || item.comments_url;
+    if (!url) continue;
 
     stories.push({
       id: `lo-${item.short_id}`,
       source: 'lobsters',
       title: item.title,
-      url: item.url,
+      url,
       score: item.score,
       author: item.submitter_user ?? null,
       description: item.description_plain || null,

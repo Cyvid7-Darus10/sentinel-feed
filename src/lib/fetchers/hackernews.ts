@@ -2,6 +2,7 @@ import type { Story } from '../types';
 
 const HN_API = 'https://hacker-news.firebaseio.com/v0';
 const TOP_STORIES_LIMIT = 30;
+const REQUEST_TIMEOUT = 10_000;
 
 interface HNItem {
   id: number;
@@ -16,7 +17,9 @@ interface HNItem {
 }
 
 export async function fetchHackerNews(): Promise<Story[]> {
-  const res = await fetch(`${HN_API}/topstories.json`);
+  const res = await fetch(`${HN_API}/topstories.json`, {
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT),
+  });
   if (!res.ok) {
     throw new Error(`HN API error: ${res.status}`);
   }
@@ -57,7 +60,9 @@ export async function fetchHackerNews(): Promise<Story[]> {
 
 async function fetchItem(id: number): Promise<HNItem | null> {
   try {
-    const res = await fetch(`${HN_API}/item/${id}.json`);
+    const res = await fetch(`${HN_API}/item/${id}.json`, {
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT),
+    });
     if (!res.ok) return null;
     return (await res.json()) as HNItem;
   } catch {

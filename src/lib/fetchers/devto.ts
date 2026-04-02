@@ -19,8 +19,10 @@ interface DevtoArticle {
 }
 
 export async function fetchDevto(): Promise<Story[]> {
+  // top=1 means "top articles from the last 1 day"
   const res = await fetch(`${DEVTO_API}?top=1&per_page=30`, {
     headers: { Accept: 'application/json' },
+    signal: AbortSignal.timeout(10_000),
   });
 
   if (!res.ok) {

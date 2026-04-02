@@ -23,7 +23,9 @@ async function readStoriesForDate(dateKey: string): Promise<Story[]> {
     if (!blobUrl) return [];
     const res = await fetch(blobUrl);
     if (!res.ok) return [];
-    return (await res.json()) as Story[];
+    const data = await res.json();
+    if (!Array.isArray(data)) return [];
+    return data as Story[];
   } catch {
     return [];
   }
