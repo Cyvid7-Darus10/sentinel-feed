@@ -77,7 +77,7 @@ function Sector({
             className="inline-block h-2 w-2"
             style={{ background: topic.color }}
           />
-          <span className="text-[11px] font-bold tracking-wider text-text-bright">
+          <span className="text-[12px] font-bold tracking-wider text-text-bright sm:text-[11px]">
             {topic.label}
           </span>
         </div>
@@ -99,7 +99,7 @@ function Sector({
               href={story.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-start gap-2 border-b border-border/50 px-3 py-2 transition-colors hover:bg-bg-hover"
+              className="flex items-start gap-2 border-b border-border/50 px-3 py-2.5 transition-colors hover:bg-bg-hover sm:py-2"
             >
               <span
                 className={`badge mt-0.5 shrink-0 ${sourceBadgeClass(story.source)}`}
@@ -107,10 +107,10 @@ function Sector({
                 {sourceBadgeLabel(story.source)}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[11px] leading-snug text-text-bright">
+                <p className="line-clamp-2 text-[13px] leading-snug text-text-bright sm:truncate sm:text-[12px]">
                   {story.title}
                 </p>
-                <div className="mt-0.5 flex items-center gap-2 text-[10px] text-text-muted">
+                <div className="mt-0.5 flex items-center gap-2 text-[11px] text-text-muted sm:text-[10px]">
                   <span>{relativeTime(story.publishedAt ?? story.fetchedAt)}</span>
                   {score && (
                     <span style={{ color: topic.color }}>{score}</span>

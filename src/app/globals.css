@@ -147,10 +147,12 @@ body {
     grid-template-columns: 1fr;
     grid-template-rows: auto;
     overflow-y: auto;
+    padding: 0;
+    gap: 0;
   }
 
   .sector-card {
-    max-height: 280px;
+    max-height: 360px;
   }
 }
 
