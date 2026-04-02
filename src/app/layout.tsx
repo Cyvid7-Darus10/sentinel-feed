@@ -10,7 +10,8 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: 'Sentinel Feed — Tech Intelligence',
-  description: 'AI-summarized tech news from HN, GitHub trending, and more. Stay current in 5 minutes.',
+  description:
+    'AI-summarized tech news from HN, GitHub trending, and more. Stay current in 5 minutes.',
 };
 
 export default function RootLayout({
@@ -20,9 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${jetbrainsMono.variable} h-full`}>
-      <body className="scanlines min-h-full flex flex-col font-mono">
-        {children}
-      </body>
+      <body className="h-full font-mono">{children}</body>
     </html>
   );
 }
