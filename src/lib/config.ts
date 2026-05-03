@@ -28,3 +28,7 @@ export const API = {
   stories: (days: number) => `/api/stories?days=${days}`,
   sources: '/api/sources',
 } as const;
+
+/** Mac App Store listing for the Sentinel Bar companion app. */
+export const APP_STORE_URL =
+  'https://apps.apple.com/app/sentinel-feed/id6761529644?mt=12';

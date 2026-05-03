@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Story, SourceId, SourceHealth } from '@/lib/types';
 import { TOPICS, categorizeStories, categorizeTopic } from '@/lib/topics';
 import { SOURCE_FILTER_OPTIONS } from '@/lib/sources';
-import { DEFAULT_TOPIC_COLOR, ACCENT_GREEN, API, REFRESH_INTERVAL_MS } from '@/lib/config';
+import { DEFAULT_TOPIC_COLOR, ACCENT_GREEN, API, REFRESH_INTERVAL_MS, APP_STORE_URL } from '@/lib/config';
 import { relativeTime } from '@/lib/utils';
 import { StoryNode } from './story-node';
 import { SectorMap } from './sector-map';
@@ -288,7 +288,14 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
             <span className="text-text-secondary">
               <span className="font-semibold text-text-bright">Sentinel Bar</span>
               {' '}— native macOS menu bar app. Get tech news at a glance without opening your browser.
-              <span className="ml-1 text-warning">Coming soon</span>
+              <a
+                href={APP_STORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-2 font-semibold text-success hover:underline"
+              >
+                Get it on the Mac App Store &rarr;
+              </a>
             </span>
           </div>
           <button
