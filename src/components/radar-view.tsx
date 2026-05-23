@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import type { Story } from '@/lib/types';
 import { TOPICS, categorizeTopic } from '@/lib/topics';
 import { isCritical } from '@/lib/classification';
@@ -166,17 +166,9 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredStory, setHoveredStory] = useState<PlottedStory | null>(null);
   // `flip` is computed at hover time (where the container rect is available),
-  // so render never reads the ref. `isDesktop` is tracked via matchMedia.
+  // so render never reads the ref. Desktop positioning lives in CSS — the
+  // .radar-tooltip media query consumes the --tooltip-* vars set in render.
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0, flip: false });
-  const [isDesktop, setIsDesktop] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 640px)');
-    const update = () => setIsDesktop(mq.matches);
-    update();
-    mq.addEventListener('change', update);
-    return () => mq.removeEventListener('change', update);
-  }, []);
 
   const size = 700;
   const cx = size / 2;
@@ -495,17 +487,13 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
       {/* Tooltip — fixed top-center on mobile, cursor-following on desktop */}
       {hoveredStory && (
         <div
-          className="pointer-events-none absolute z-50 max-sm:left-2 max-sm:right-2 max-sm:top-10 sm:left-auto sm:right-auto sm:top-auto"
+          className="radar-tooltip pointer-events-none absolute z-50 max-sm:left-2 max-sm:right-2 max-sm:top-10"
           style={
-            isDesktop
-              ? {
-                  left: tooltipPos.x,
-                  top: tooltipPos.y,
-                  transform: tooltipPos.flip
-                    ? 'translateX(-100%)'
-                    : 'translateX(0)',
-                }
-              : undefined
+            {
+              '--tooltip-x': `${tooltipPos.x}px`,
+              '--tooltip-y': `${tooltipPos.y}px`,
+              '--tooltip-flip': tooltipPos.flip ? '-100%' : '0px',
+            } as React.CSSProperties
           }
         >
           <div className="max-sm:w-full">
