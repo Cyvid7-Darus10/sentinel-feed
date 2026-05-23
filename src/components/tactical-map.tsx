@@ -1,136 +1,41 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import type { Story, SourceId, SourceHealth } from '@/lib/types';
 import { TOPICS, categorizeStories, categorizeTopic } from '@/lib/topics';
-import { SOURCE_FILTER_OPTIONS } from '@/lib/sources';
-import { DEFAULT_TOPIC_COLOR, ACCENT_GREEN, API, REFRESH_INTERVAL_MS } from '@/lib/config';
+import { DEFAULT_TOPIC_COLOR } from '@/lib/config';
 import { relativeTime } from '@/lib/utils';
-import { StoryNode } from './story-node';
+import { type TimeRange, timeRangeToMs } from '@/lib/time-range';
+import { useStoryFeed } from './use-story-feed';
+import { DashboardToolbar, type ViewMode } from './dashboard-toolbar';
+import { PromoBanner } from './promo-banner';
+import { StoryListView } from './story-list-view';
 import { SectorMap } from './sector-map';
 import { RadarView } from './radar-view';
-
-type ViewMode = 'list' | 'map' | 'radar';
-
-type TimeRange = '6h' | '12h' | '24h' | '7d';
 
 interface TacticalMapProps {
   readonly initialStories: readonly Story[];
   readonly initialHealth: SourceHealth;
 }
 
-function timeRangeToDays(range: TimeRange): number {
-  return range === '7d' ? 7 : 1;
-}
-
-function timeRangeToMs(range: TimeRange): number {
-  switch (range) {
-    case '6h':
-      return 6 * 3_600_000;
-    case '12h':
-      return 12 * 3_600_000;
-    case '24h':
-      return 24 * 3_600_000;
-    case '7d':
-      return 7 * 24 * 3_600_000;
-  }
-}
-
-const TIME_RANGES: readonly { id: TimeRange; label: string }[] = [
-  { id: '6h', label: '6H' },
-  { id: '12h', label: '12H' },
-  { id: '24h', label: '24H' },
-  { id: '7d', label: '7D' },
-];
-
-// ── Banner dismissal store ──
-// localStorage-backed so the "Sentinel Bar" promo stays dismissed across reloads.
-// Exposed via useSyncExternalStore to read client-only state without a
-// hydration mismatch or a setState-in-effect cascade.
-const BANNER_DISMISSED_KEY = 'sentinel-banner-dismissed';
-const bannerListeners = new Set<() => void>();
-
-function subscribeBanner(callback: () => void): () => void {
-  bannerListeners.add(callback);
-  window.addEventListener('storage', callback);
-  return () => {
-    bannerListeners.delete(callback);
-    window.removeEventListener('storage', callback);
-  };
-}
-
-function getBannerVisibleSnapshot(): boolean {
-  return localStorage.getItem(BANNER_DISMISSED_KEY) !== '1';
-}
-
-// Server render never shows the banner (no localStorage); the client snapshot
-// takes over after hydration, which useSyncExternalStore handles cleanly.
-function getBannerServerSnapshot(): boolean {
-  return false;
-}
-
-function dismissBannerStore(): void {
-  localStorage.setItem(BANNER_DISMISSED_KEY, '1');
-  bannerListeners.forEach((listener) => listener());
-}
-
 export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps) {
-  const [stories, setStories] = useState<readonly Story[]>(initialStories);
-  const [health, setHealth] = useState<SourceHealth>(initialHealth);
   const [activeSource, setActiveSource] = useState<SourceId | null>(null);
   const [activeRange, setActiveRange] = useState<TimeRange>('24h');
   const [activeTopic, setActiveTopic] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('radar');
-  const [rateLimited, setRateLimited] = useState(false);
-  // `now` drives time-window filtering. Kept in state (not Date.now() in render)
-  // so the filter stays pure and recomputes on each refresh tick.
-  const [now, setNow] = useState(() => Date.now());
 
-  const showBanner = useSyncExternalStore(
-    subscribeBanner,
-    getBannerVisibleSnapshot,
-    getBannerServerSnapshot
+  const { stories, health, rateLimited, now } = useStoryFeed(
+    initialStories,
+    initialHealth,
+    activeRange
   );
-
-  const dismissBanner = useCallback(() => {
-    dismissBannerStore();
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      setNow(Date.now());
-      try {
-        const days = timeRangeToDays(activeRange);
-        const [storiesRes, healthRes] = await Promise.all([
-          fetch(API.stories(days)),
-          fetch(API.sources),
-        ]);
-        if (storiesRes.status === 429 || healthRes.status === 429) {
-          setRateLimited(true);
-          return;
-        }
-        setRateLimited(false);
-        if (storiesRes.ok) {
-          const data = await storiesRes.json();
-          setStories(data.stories);
-        }
-        if (healthRes.ok) {
-          const data = await healthRes.json();
-          setHealth(data);
-        }
-      } catch {
-        // next poll retries
-      }
-    }, REFRESH_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [activeRange]);
 
   const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   }, []);
 
-  // Filter by source, time, search
+  // Filter by source, time window, and search query.
   const filtered = useMemo(() => {
     const rangeMs = timeRangeToMs(activeRange);
     const q = searchQuery.toLowerCase();
@@ -148,10 +53,8 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
     });
   }, [stories, activeSource, activeRange, searchQuery, now]);
 
-  // Categorize into topics
   const categorized = useMemo(() => categorizeStories(filtered), [filtered]);
 
-  // Topic counts for tabs
   const topicCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const topic of TOPICS) {
@@ -160,22 +63,17 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
     return counts;
   }, [categorized]);
 
-  // Stories to display (filtered by active topic)
+  // List view: all stories (score desc) unless a topic tab is active.
   const displayStories = useMemo(() => {
     if (!activeTopic) {
-      // Show all, sorted by score desc
       return [...filtered].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
     }
     return categorized[activeTopic] ?? [];
   }, [filtered, activeTopic, categorized]);
 
-  // Get topic color for a story
   const getTopicColor = useCallback(
     (story: Story): string => {
-      if (activeTopic) {
-        return TOPICS.find((t) => t.id === activeTopic)?.color ?? DEFAULT_TOPIC_COLOR;
-      }
-      const topicId = categorizeTopic(story);
+      const topicId = activeTopic ?? categorizeTopic(story);
       return TOPICS.find((t) => t.id === topicId)?.color ?? DEFAULT_TOPIC_COLOR;
     },
     [activeTopic]
@@ -191,119 +89,20 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
 
   return (
     <div className="flex h-screen flex-col">
-      {/* ── Header Bar ── */}
-      <header className="border-b border-border bg-bg-primary">
-        {/* Top row: brand + view toggle + search + stats */}
-        <div className="flex items-center gap-x-4 px-4 py-2">
-          <span className="shrink-0 text-[14px] font-bold uppercase tracking-[0.1em] text-text-bright">
-            Sentinel
-          </span>
+      <DashboardToolbar
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        searchQuery={searchQuery}
+        onSearchChange={handleSearch}
+        activeSource={activeSource}
+        onSourceChange={setActiveSource}
+        activeRange={activeRange}
+        onRangeChange={setActiveRange}
+        storyCount={filtered.length}
+        sourceCount={sourceCount}
+        lastUpdate={lastUpdate}
+      />
 
-          <div className="hidden h-4 w-px bg-border sm:block" />
-
-          {/* View Toggle */}
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setViewMode('radar')}
-              aria-pressed={viewMode === 'radar'}
-              className={`filter-btn ${viewMode === 'radar' ? 'filter-btn-active' : 'filter-btn-inactive'}`}
-              title="Radar view"
-            >
-              RADAR
-            </button>
-            <button
-              onClick={() => setViewMode('map')}
-              aria-pressed={viewMode === 'map'}
-              className={`filter-btn ${viewMode === 'map' ? 'filter-btn-active' : 'filter-btn-inactive'}`}
-              title="Sector map view"
-            >
-              MAP
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              aria-pressed={viewMode === 'list'}
-              className={`filter-btn ${viewMode === 'list' ? 'filter-btn-active' : 'filter-btn-inactive'}`}
-              title="List view"
-            >
-              LIST
-            </button>
-          </div>
-
-          {/* Search */}
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={handleSearch}
-            placeholder="Search..."
-            className="search-input hidden w-44 sm:block"
-            aria-label="Search stories"
-          />
-
-          {/* Stats */}
-          <div className="ml-auto flex shrink-0 items-center gap-3 text-[11px] text-text-secondary">
-            <span>
-              <span className="text-text-bright">{filtered.length}</span> stories
-            </span>
-            <span className="hidden sm:inline">
-              <span className="text-text-bright">{sourceCount}</span> sources
-            </span>
-            {lastUpdate && (
-              <span className="hidden lg:inline">
-                updated <span className="text-success">{lastUpdate}</span>
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Bottom row: filters (scrollable on mobile) */}
-        <div className="flex items-center gap-3 overflow-x-auto px-4 pb-2">
-          {/* Source Filters */}
-          <div className="flex shrink-0 items-center gap-1">
-            {SOURCE_FILTER_OPTIONS.map((s) => (
-              <button
-                key={s.id ?? 'all'}
-                onClick={() => setActiveSource(s.id)}
-                aria-pressed={activeSource === s.id}
-                className={`filter-btn ${
-                  activeSource === s.id ? 'filter-btn-active' : 'filter-btn-inactive'
-                }`}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="h-4 w-px shrink-0 bg-border" />
-
-          {/* Time Filters */}
-          <div className="flex shrink-0 items-center gap-1">
-            {TIME_RANGES.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setActiveRange(t.id)}
-                aria-pressed={activeRange === t.id}
-                className={`filter-btn ${
-                  activeRange === t.id ? 'filter-btn-active' : 'filter-btn-inactive'
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Mobile search (visible only on small screens) */}
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={handleSearch}
-            placeholder="Search..."
-            className="search-input block w-36 shrink-0 sm:hidden"
-            aria-label="Search stories"
-          />
-        </div>
-      </header>
-
-      {/* ── Rate Limited Banner ── */}
       {rateLimited && (
         <div className="flex items-center gap-3 border-b border-danger/30 bg-danger/5 px-4 py-2">
           <span className="text-[12px] text-danger">
@@ -312,73 +111,17 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
         </div>
       )}
 
-      {/* ── macOS App Banner ── */}
-      {showBanner && (
-        <div className="flex items-center justify-between gap-3 border-b border-border bg-bg-panel px-4 py-2">
-          <div className="flex items-center gap-3 text-[11px]">
-            <span className="text-[13px]">&#x1F4E1;</span>
-            <span className="text-text-secondary">
-              <span className="font-semibold text-text-bright">Sentinel Bar</span>
-              {' '}— native macOS menu bar app. Get tech news at a glance without opening your browser.
-              <span className="ml-1 text-warning">Coming soon</span>
-            </span>
-          </div>
-          <button
-            onClick={dismissBanner}
-            className="shrink-0 text-[11px] text-text-muted transition-colors hover:text-text-secondary"
-            aria-label="Dismiss banner"
-          >
-            &#x2715;
-          </button>
-        </div>
-      )}
+      <PromoBanner />
 
       {viewMode === 'list' && (
-        <>
-          {/* ── Topic Tabs ── */}
-          <nav className="flex gap-0 overflow-x-auto border-b border-border bg-bg-primary px-3">
-            <button
-              onClick={() => setActiveTopic(null)}
-              className={`topic-tab ${!activeTopic ? 'topic-tab-active' : ''}`}
-              style={{ '--tab-color': ACCENT_GREEN } as React.CSSProperties}
-            >
-              ALL
-              <span className="ml-1.5 text-[10px] opacity-50">{filtered.length}</span>
-            </button>
-            {TOPICS.map((topic) => (
-              <button
-                key={topic.id}
-                onClick={() => setActiveTopic(activeTopic === topic.id ? null : topic.id)}
-                className={`topic-tab ${activeTopic === topic.id ? 'topic-tab-active' : ''}`}
-                style={{ '--tab-color': topic.color } as React.CSSProperties}
-              >
-                {topic.label}
-                <span className="ml-1.5 text-[10px] opacity-50">
-                  {topicCounts[topic.id] ?? 0}
-                </span>
-              </button>
-            ))}
-          </nav>
-
-          {/* ── Story Feed ── */}
-          <main className="flex-1 overflow-y-auto">
-            <div className="mx-auto max-w-3xl">
-              {displayStories.length === 0 ? (
-                <div className="px-5 py-16 text-center text-[12px] text-text-muted">
-                  No stories match the current filters.
-                </div>
-              ) : (
-                displayStories.map((story) => (
-                  <StoryNode
-                    key={story.id}
-                    story={story}
-                    topicColor={getTopicColor(story)}
-                  />
-                ))
-              )}
-            </div>
-          </main>
-        </>
+        <StoryListView
+          activeTopic={activeTopic}
+          onTopicChange={setActiveTopic}
+          totalCount={filtered.length}
+          topicCounts={topicCounts}
+          displayStories={displayStories}
+          getTopicColor={getTopicColor}
+        />
       )}
 
       {viewMode === 'map' && (
@@ -393,7 +136,6 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
         </main>
       )}
 
-      {/* ── Footer ── */}
       <footer className="flex items-center justify-between border-t border-border bg-bg-primary px-5 py-1.5 text-[10px] text-text-muted">
         <span>{displayStories.length} of {stories.length} stories — auto-refresh 60s</span>
         <nav className="flex gap-3" aria-label="Legal">
