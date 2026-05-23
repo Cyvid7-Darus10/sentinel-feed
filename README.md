@@ -249,9 +249,9 @@ See any existing fetcher (e.g., `lobsters.ts`) as a reference — most are under
 
 ## Sentinel Bar — macOS Menu Bar App
 
-> Coming soon to the Mac App Store
+[![Download on the Mac App Store](https://img.shields.io/badge/Download-Mac%20App%20Store-000?logo=apple&logoColor=white)](https://apps.apple.com/app/sentinel-feed/id6761529644?mt=12)
 
-Native macOS menu bar companion that puts your tech feed one click away.
+Native macOS menu bar companion that puts your tech feed one click away. [Get it on the Mac App Store](https://apps.apple.com/app/sentinel-feed/id6761529644?mt=12).
 
 - **Menu bar icon** with live critical alert count
 - **Native feed** — SwiftUI list with critical alerts section, story cards, source badges, and scores

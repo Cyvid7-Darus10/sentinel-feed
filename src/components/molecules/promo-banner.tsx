@@ -1,6 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import { APP_STORE_URL } from '@/lib/config';
 
 // localStorage-backed dismissal so the "Sentinel Bar" promo stays hidden across
 // reloads. useSyncExternalStore reads this client-only state without a hydration
@@ -43,7 +44,14 @@ export function PromoBanner() {
         <span className="text-text-secondary">
           <span className="font-semibold text-text-bright">Sentinel Bar</span>
           {' '}— native macOS menu bar app. Get tech news at a glance without opening your browser.
-          <span className="ml-1 text-warning">Coming soon</span>
+          <a
+            href={APP_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-2 font-semibold text-success hover:underline"
+          >
+            Get it on the Mac App Store &rarr;
+          </a>
         </span>
       </div>
       <button
