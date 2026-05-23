@@ -16,9 +16,10 @@ Thank you for your interest in contributing. This guide covers the process for s
 2. Write tests first, then implement
 3. Run tests: `npm test`
 4. Run linting: `npm run lint`
-5. Verify the build: `npm run build`
-6. Commit with a descriptive message (see below)
-7. Push and open a pull request
+5. Type-check: `npm run typecheck`
+6. Verify the build: `npm run build`
+7. Commit with a descriptive message (see below)
+8. Push and open a pull request
 
 ## Commit Messages
 
