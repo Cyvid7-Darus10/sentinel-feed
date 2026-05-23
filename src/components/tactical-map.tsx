@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from 'react';
 import type { Story, SourceId, SourceHealth } from '@/lib/types';
 import { TOPICS, categorizeStories, categorizeTopic } from '@/lib/topics';
 import { SOURCE_FILTER_OPTIONS } from '@/lib/sources';
@@ -43,6 +43,37 @@ const TIME_RANGES: readonly { id: TimeRange; label: string }[] = [
   { id: '7d', label: '7D' },
 ];
 
+// ── Banner dismissal store ──
+// localStorage-backed so the "Sentinel Bar" promo stays dismissed across reloads.
+// Exposed via useSyncExternalStore to read client-only state without a
+// hydration mismatch or a setState-in-effect cascade.
+const BANNER_DISMISSED_KEY = 'sentinel-banner-dismissed';
+const bannerListeners = new Set<() => void>();
+
+function subscribeBanner(callback: () => void): () => void {
+  bannerListeners.add(callback);
+  window.addEventListener('storage', callback);
+  return () => {
+    bannerListeners.delete(callback);
+    window.removeEventListener('storage', callback);
+  };
+}
+
+function getBannerVisibleSnapshot(): boolean {
+  return localStorage.getItem(BANNER_DISMISSED_KEY) !== '1';
+}
+
+// Server render never shows the banner (no localStorage); the client snapshot
+// takes over after hydration, which useSyncExternalStore handles cleanly.
+function getBannerServerSnapshot(): boolean {
+  return false;
+}
+
+function dismissBannerStore(): void {
+  localStorage.setItem(BANNER_DISMISSED_KEY, '1');
+  bannerListeners.forEach((listener) => listener());
+}
+
 export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps) {
   const [stories, setStories] = useState<readonly Story[]>(initialStories);
   const [health, setHealth] = useState<SourceHealth>(initialHealth);
@@ -51,22 +82,24 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
   const [activeTopic, setActiveTopic] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('radar');
-  const [showBanner, setShowBanner] = useState(false);
   const [rateLimited, setRateLimited] = useState(false);
+  // `now` drives time-window filtering. Kept in state (not Date.now() in render)
+  // so the filter stays pure and recomputes on each refresh tick.
+  const [now, setNow] = useState(() => Date.now());
 
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !localStorage.getItem('sentinel-banner-dismissed')) {
-      setShowBanner(true);
-    }
-  }, []);
+  const showBanner = useSyncExternalStore(
+    subscribeBanner,
+    getBannerVisibleSnapshot,
+    getBannerServerSnapshot
+  );
 
   const dismissBanner = useCallback(() => {
-    setShowBanner(false);
-    localStorage.setItem('sentinel-banner-dismissed', '1');
+    dismissBannerStore();
   }, []);
 
   useEffect(() => {
     const interval = setInterval(async () => {
+      setNow(Date.now());
       try {
         const days = timeRangeToDays(activeRange);
         const [storiesRes, healthRes] = await Promise.all([
@@ -99,7 +132,6 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
 
   // Filter by source, time, search
   const filtered = useMemo(() => {
-    const now = Date.now();
     const rangeMs = timeRangeToMs(activeRange);
     const q = searchQuery.toLowerCase();
 
@@ -114,7 +146,7 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
       }
       return true;
     });
-  }, [stories, activeSource, activeRange, searchQuery]);
+  }, [stories, activeSource, activeRange, searchQuery, now]);
 
   // Categorize into topics
   const categorized = useMemo(() => categorizeStories(filtered), [filtered]);

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import type { Story, SourceHealth } from '@/lib/types';
+import type { Story } from '@/lib/types';
 import { TOPICS, categorizeTopic } from '@/lib/topics';
 import { getSourceConfig, formatScore } from '@/lib/sources';
 import { isCritical } from '@/lib/classification';
@@ -10,7 +10,6 @@ import { relativeTime, isSafeUrl } from '@/lib/utils';
 
 interface EmbedViewProps {
   readonly initialStories: readonly Story[];
-  readonly initialHealth: SourceHealth;
 }
 
 function CompactStory({ story }: { readonly story: Story }) {
@@ -52,13 +51,16 @@ function CompactStory({ story }: { readonly story: Story }) {
   );
 }
 
-export function EmbedView({ initialStories, initialHealth }: EmbedViewProps) {
+export function EmbedView({ initialStories }: EmbedViewProps) {
   const [stories, setStories] = useState<readonly Story[]>(initialStories);
   const [activeTopic, setActiveTopic] = useState<string | null>(null);
+  // `now` drives the 24h window; kept in state so the filter stays pure.
+  const [now, setNow] = useState(() => Date.now());
 
   // Auto-refresh every 2 minutes
   useEffect(() => {
     const interval = setInterval(async () => {
+      setNow(Date.now());
       try {
         const res = await fetch(API.stories(1));
         if (res.ok) {
@@ -74,12 +76,12 @@ export function EmbedView({ initialStories, initialHealth }: EmbedViewProps) {
 
   // Filter to last 24h
   const recent = useMemo(() => {
-    const cutoff = Date.now() - 24 * 3_600_000;
+    const cutoff = now - 24 * 3_600_000;
     return stories.filter((s) => {
       const t = new Date(s.publishedAt ?? s.fetchedAt).getTime();
       return t > cutoff;
     });
-  }, [stories]);
+  }, [stories, now]);
 
   // Topic counts
   const topicCounts = useMemo(() => {

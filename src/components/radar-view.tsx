@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import type { Story } from '@/lib/types';
 import { TOPICS, categorizeTopic } from '@/lib/topics';
 import { isCritical } from '@/lib/classification';
@@ -165,7 +165,18 @@ function plotStories(
 export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredStory, setHoveredStory] = useState<PlottedStory | null>(null);
-  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  // `flip` is computed at hover time (where the container rect is available),
+  // so render never reads the ref. `isDesktop` is tracked via matchMedia.
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0, flip: false });
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 640px)');
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
   const size = 700;
   const cx = size / 2;
@@ -183,9 +194,11 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
         const rawX = e.clientX - rect.left + 16;
         const rawY = e.clientY - rect.top - 12;
         const maxX = rect.width - 320;
+        const x = Math.max(8, Math.min(rawX, maxX));
         setTooltipPos({
-          x: Math.max(8, Math.min(rawX, maxX)),
+          x,
           y: Math.max(8, rawY),
+          flip: x > rect.width / 2,
         });
       }
     },
@@ -483,15 +496,17 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
       {hoveredStory && (
         <div
           className="pointer-events-none absolute z-50 max-sm:left-2 max-sm:right-2 max-sm:top-10 sm:left-auto sm:right-auto sm:top-auto"
-          style={{
-            ...((typeof window !== 'undefined' && window.innerWidth >= 640) ? {
-              left: tooltipPos.x,
-              top: tooltipPos.y,
-              transform: tooltipPos.x > (containerRef.current?.clientWidth ?? 700) / 2
-                ? 'translateX(-100%)'
-                : 'translateX(0)',
-            } : {}),
-          }}
+          style={
+            isDesktop
+              ? {
+                  left: tooltipPos.x,
+                  top: tooltipPos.y,
+                  transform: tooltipPos.flip
+                    ? 'translateX(-100%)'
+                    : 'translateX(0)',
+                }
+              : undefined
+          }
         >
           <div className="max-sm:w-full">
             <StoryTooltip story={hoveredStory.story} topicColor={hoveredStory.topicColor} className="radar-tooltip-inner" />
