@@ -1,5 +1,5 @@
 import { readStoriesForDays } from '@/lib/storage';
-import { EmbedView } from '@/components/embed-view';
+import { EmbedView } from '@/components/organisms/embed-view';
 
 export const dynamic = 'force-dynamic';
 

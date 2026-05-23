@@ -3,17 +3,18 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Story } from '@/lib/types';
 import { TOPICS, categorizeTopic } from '@/lib/topics';
-import { getSourceConfig, formatScore } from '@/lib/sources';
+import { formatScore } from '@/lib/sources';
 import { isCritical } from '@/lib/classification';
 import { DEFAULT_TOPIC_COLOR, CRITICAL_COLOR, API, DAY_MS } from '@/lib/config';
 import { relativeTime, isSafeUrl } from '@/lib/utils';
+import { Badge } from '../atoms/badge';
+import { TopicDot } from '../atoms/topic-dot';
 
 interface EmbedViewProps {
   readonly initialStories: readonly Story[];
 }
 
 function CompactStory({ story }: { readonly story: Story }) {
-  const source = getSourceConfig(story.source);
   const score = formatScore(story.source, story.score);
   const critical = isCritical(story);
   const topicId = categorizeTopic(story);
@@ -26,9 +27,7 @@ function CompactStory({ story }: { readonly story: Story }) {
       rel="noopener noreferrer"
       className="flex items-start gap-2 border-b border-border px-3 py-2.5 transition-colors hover:bg-bg-hover"
     >
-      <span className={`badge mt-0.5 shrink-0 ${source.badgeClass}`}>
-        {source.badge}
-      </span>
+      <Badge sourceId={story.source} className="mt-0.5 shrink-0" />
       <div className="min-w-0 flex-1">
         <p
           className="text-[12px] font-medium leading-snug text-text-bright"
@@ -143,14 +142,11 @@ export function EmbedView({ initialStories }: EmbedViewProps) {
             className={`embed-pill ${activeTopic === topic.id ? 'embed-pill-active' : ''}`}
             style={
               activeTopic === topic.id
-                ? ({ '--pill-color': topic.color } as React.CSSProperties)
+                ? { '--pill-color': topic.color }
                 : undefined
             }
           >
-            <span
-              className="inline-block h-1.5 w-1.5 rounded-full"
-              style={{ background: topic.color }}
-            />
+            <TopicDot color={topic.color} className="h-1.5 w-1.5 rounded-full" />
             {topicCounts[topic.id] ?? 0}
           </button>
         ))}

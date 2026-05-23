@@ -3,9 +3,11 @@
 import type { Story } from '@/lib/types';
 import type { Topic } from '@/lib/topics';
 import { TOPICS, categorizeStories } from '@/lib/topics';
-import { getSourceConfig, formatScore } from '@/lib/sources';
+import { formatScore } from '@/lib/sources';
 import { relativeTime, isSafeUrl } from '@/lib/utils';
-import { StoryTooltip } from './story-tooltip';
+import { StoryTooltip } from '../molecules/story-tooltip';
+import { Badge } from '../atoms/badge';
+import { TopicDot } from '../atoms/topic-dot';
 import { useMemo } from 'react';
 
 interface SectorMapProps {
@@ -28,7 +30,7 @@ function Sector({
   return (
     <div
       className="sector-card group flex flex-col"
-      style={{ '--sector-color': topic.color } as React.CSSProperties}
+      style={{ '--sector-color': topic.color }}
     >
       {/* Sector Header */}
       <button
@@ -36,10 +38,7 @@ function Sector({
         className="flex items-center justify-between border-b border-border px-2 py-1.5 text-left transition-colors hover:bg-bg-hover sm:px-3 sm:py-2"
       >
         <div className="flex items-center gap-2">
-          <span
-            className="inline-block h-2 w-2"
-            style={{ background: topic.color }}
-          />
+          <TopicDot color={topic.color} />
           <span className="text-[10px] font-bold tracking-wider text-text-bright sm:text-[11px]">
             {topic.label}
           </span>
@@ -55,7 +54,6 @@ function Sector({
       {/* Story List */}
       <div className="flex-1 overflow-y-auto">
         {topStories.map((story) => {
-          const src = getSourceConfig(story.source);
           const score = formatScore(story.source, story.score);
           return (
             <div key={story.id} className="story-tooltip-wrap relative">
@@ -65,11 +63,10 @@ function Sector({
                 rel="noopener noreferrer"
                 className="flex items-start gap-2 border-b border-border/50 px-2 py-1.5 transition-colors hover:bg-bg-hover sm:px-3 sm:py-2"
               >
-                <span
-                  className={`badge mt-0.5 hidden shrink-0 sm:inline ${src.badgeClass}`}
-                >
-                  {src.badge}
-                </span>
+                <Badge
+                  sourceId={story.source}
+                  className="mt-0.5 hidden shrink-0 sm:inline"
+                />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[11px] leading-snug text-text-bright sm:text-[12px] sm:line-clamp-2 sm:whitespace-normal">
                     {story.title}

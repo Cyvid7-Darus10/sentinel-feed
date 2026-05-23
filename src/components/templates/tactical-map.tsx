@@ -6,12 +6,13 @@ import { TOPICS, categorizeStories, categorizeTopic } from '@/lib/topics';
 import { DEFAULT_TOPIC_COLOR } from '@/lib/config';
 import { relativeTime } from '@/lib/utils';
 import { type TimeRange, timeRangeToMs } from '@/lib/time-range';
-import { useStoryFeed } from './use-story-feed';
-import { DashboardToolbar, type ViewMode } from './dashboard-toolbar';
-import { PromoBanner } from './promo-banner';
-import { StoryListView } from './story-list-view';
-import { SectorMap } from './sector-map';
-import { RadarView } from './radar-view';
+import { useStoryFeed } from '../hooks/use-story-feed';
+import { DashboardToolbar } from '../organisms/dashboard-toolbar';
+import { type ViewMode } from '../molecules/view-toggle';
+import { PromoBanner } from '../molecules/promo-banner';
+import { StoryListView } from '../organisms/story-list-view';
+import { SectorMap } from '../organisms/sector-map';
+import { RadarView } from '../organisms/radar-view';
 
 interface TacticalMapProps {
   readonly initialStories: readonly Story[];
@@ -31,8 +32,8 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
     activeRange
   );
 
-  const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
+  const handleSearch = useCallback((value: string) => {
+    setSearchQuery(value);
   }, []);
 
   // Filter by source, time window, and search query.

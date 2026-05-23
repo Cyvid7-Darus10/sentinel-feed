@@ -3,20 +3,15 @@
 import type { SourceId } from '@/lib/types';
 import { SOURCE_FILTER_OPTIONS } from '@/lib/sources';
 import { TIME_RANGES, type TimeRange } from '@/lib/time-range';
-
-export type ViewMode = 'list' | 'map' | 'radar';
-
-const VIEW_MODES: readonly { id: ViewMode; label: string; title: string }[] = [
-  { id: 'radar', label: 'RADAR', title: 'Radar view' },
-  { id: 'map', label: 'MAP', title: 'Sector map view' },
-  { id: 'list', label: 'LIST', title: 'List view' },
-];
+import { ViewToggle, type ViewMode } from '../molecules/view-toggle';
+import { FilterGroup } from '../molecules/filter-group';
+import { SearchInput } from '../atoms/search-input';
 
 interface DashboardToolbarProps {
   readonly viewMode: ViewMode;
   readonly onViewModeChange: (mode: ViewMode) => void;
   readonly searchQuery: string;
-  readonly onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  readonly onSearchChange: (value: string) => void;
   readonly activeSource: SourceId | null;
   readonly onSourceChange: (source: SourceId | null) => void;
   readonly activeRange: TimeRange;
@@ -24,10 +19,6 @@ interface DashboardToolbarProps {
   readonly storyCount: number;
   readonly sourceCount: number;
   readonly lastUpdate: string | null;
-}
-
-function filterBtnClass(active: boolean): string {
-  return `filter-btn ${active ? 'filter-btn-active' : 'filter-btn-inactive'}`;
 }
 
 export function DashboardToolbar({
@@ -53,27 +44,12 @@ export function DashboardToolbar({
 
         <div className="hidden h-4 w-px bg-border sm:block" />
 
-        <div className="flex items-center gap-1">
-          {VIEW_MODES.map((v) => (
-            <button
-              key={v.id}
-              onClick={() => onViewModeChange(v.id)}
-              aria-pressed={viewMode === v.id}
-              className={filterBtnClass(viewMode === v.id)}
-              title={v.title}
-            >
-              {v.label}
-            </button>
-          ))}
-        </div>
+        <ViewToggle value={viewMode} onChange={onViewModeChange} />
 
-        <input
-          type="text"
+        <SearchInput
           value={searchQuery}
           onChange={onSearchChange}
-          placeholder="Search..."
-          className="search-input hidden w-44 sm:block"
-          aria-label="Search stories"
+          className="hidden w-44 sm:block"
         />
 
         <div className="ml-auto flex shrink-0 items-center gap-3 text-[11px] text-text-secondary">
@@ -93,42 +69,25 @@ export function DashboardToolbar({
 
       {/* Bottom row: filters (scrollable on mobile) */}
       <div className="flex items-center gap-3 overflow-x-auto px-4 pb-2">
-        <div className="flex shrink-0 items-center gap-1">
-          {SOURCE_FILTER_OPTIONS.map((s) => (
-            <button
-              key={s.id ?? 'all'}
-              onClick={() => onSourceChange(s.id)}
-              aria-pressed={activeSource === s.id}
-              className={filterBtnClass(activeSource === s.id)}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
+        <FilterGroup
+          options={SOURCE_FILTER_OPTIONS}
+          value={activeSource}
+          onChange={onSourceChange}
+        />
 
         <div className="h-4 w-px shrink-0 bg-border" />
 
-        <div className="flex shrink-0 items-center gap-1">
-          {TIME_RANGES.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => onRangeChange(t.id)}
-              aria-pressed={activeRange === t.id}
-              className={filterBtnClass(activeRange === t.id)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+        <FilterGroup
+          options={TIME_RANGES}
+          value={activeRange}
+          onChange={onRangeChange}
+        />
 
         {/* Mobile search (visible only on small screens) */}
-        <input
-          type="text"
+        <SearchInput
           value={searchQuery}
           onChange={onSearchChange}
-          placeholder="Search..."
-          className="search-input block w-36 shrink-0 sm:hidden"
-          aria-label="Search stories"
+          className="block w-36 shrink-0 sm:hidden"
         />
       </div>
     </header>

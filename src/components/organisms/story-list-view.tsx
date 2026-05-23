@@ -3,7 +3,8 @@
 import type { Story } from '@/lib/types';
 import { TOPICS } from '@/lib/topics';
 import { ACCENT_GREEN } from '@/lib/config';
-import { StoryNode } from './story-node';
+import { Tab } from '../atoms/tab';
+import { StoryNode } from '../molecules/story-node';
 
 interface StoryListViewProps {
   readonly activeTopic: string | null;
@@ -26,26 +27,22 @@ export function StoryListView({
     <>
       {/* ── Topic Tabs ── */}
       <nav className="flex gap-0 overflow-x-auto border-b border-border bg-bg-primary px-3">
-        <button
-          onClick={() => onTopicChange(null)}
-          className={`topic-tab ${!activeTopic ? 'topic-tab-active' : ''}`}
-          style={{ '--tab-color': ACCENT_GREEN } as React.CSSProperties}
-        >
+        <Tab active={!activeTopic} onClick={() => onTopicChange(null)} color={ACCENT_GREEN}>
           ALL
           <span className="ml-1.5 text-[10px] opacity-50">{totalCount}</span>
-        </button>
+        </Tab>
         {TOPICS.map((topic) => (
-          <button
+          <Tab
             key={topic.id}
+            active={activeTopic === topic.id}
             onClick={() => onTopicChange(activeTopic === topic.id ? null : topic.id)}
-            className={`topic-tab ${activeTopic === topic.id ? 'topic-tab-active' : ''}`}
-            style={{ '--tab-color': topic.color } as React.CSSProperties}
+            color={topic.color}
           >
             {topic.label}
             <span className="ml-1.5 text-[10px] opacity-50">
               {topicCounts[topic.id] ?? 0}
             </span>
-          </button>
+          </Tab>
         ))}
       </nav>
 
