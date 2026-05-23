@@ -7,8 +7,7 @@ import { DEFAULT_TOPIC_COLOR } from '@/lib/config';
 import { relativeTime } from '@/lib/utils';
 import { type TimeRange, timeRangeToMs } from '@/lib/time-range';
 import { useStoryFeed } from '../hooks/use-story-feed';
-import { DashboardToolbar } from '../organisms/dashboard-toolbar';
-import { type ViewMode } from '../molecules/view-toggle';
+import { DashboardToolbar, type ViewMode } from '../organisms/dashboard-toolbar';
 import { PromoBanner } from '../molecules/promo-banner';
 import { StoryListView } from '../organisms/story-list-view';
 import { SectorMap } from '../organisms/sector-map';
@@ -36,7 +35,6 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
     setSearchQuery(value);
   }, []);
 
-  // Filter by source, time window, and search query.
   const filtered = useMemo(() => {
     const rangeMs = timeRangeToMs(activeRange);
     const q = searchQuery.toLowerCase();
@@ -64,7 +62,6 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
     return counts;
   }, [categorized]);
 
-  // List view: all stories (score desc) unless a topic tab is active.
   const displayStories = useMemo(() => {
     if (!activeTopic) {
       return [...filtered].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));

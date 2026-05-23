@@ -25,7 +25,6 @@ export function StoryListView({
 }: StoryListViewProps) {
   return (
     <>
-      {/* ── Topic Tabs ── */}
       <nav className="flex gap-0 overflow-x-auto border-b border-border bg-bg-primary px-3">
         <Tab active={!activeTopic} onClick={() => onTopicChange(null)} color={ACCENT_GREEN}>
           ALL
@@ -46,7 +45,6 @@ export function StoryListView({
         ))}
       </nav>
 
-      {/* ── Story Feed ── */}
       <main className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-3xl">
           {displayStories.length === 0 ? (

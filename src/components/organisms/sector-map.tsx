@@ -32,7 +32,6 @@ function Sector({
       className="sector-card group flex flex-col"
       style={{ '--sector-color': topic.color }}
     >
-      {/* Sector Header */}
       <button
         onClick={onSelect}
         className="flex items-center justify-between border-b border-border px-2 py-1.5 text-left transition-colors hover:bg-bg-hover sm:px-3 sm:py-2"
@@ -51,7 +50,6 @@ function Sector({
         </span>
       </button>
 
-      {/* Story List */}
       <div className="flex-1 overflow-y-auto">
         {topStories.map((story) => {
           const score = formatScore(story.source, story.score);
@@ -84,7 +82,6 @@ function Sector({
                   </div>
                 </div>
               </a>
-              {/* Tooltip */}
               <StoryTooltip story={story} topicColor={topic.color} className="story-tooltip" />
             </div>
           );
@@ -96,7 +93,6 @@ function Sector({
         )}
       </div>
 
-      {/* Overflow indicator */}
       {remaining > 0 && (
         <button
           onClick={onSelect}

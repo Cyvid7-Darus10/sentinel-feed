@@ -3,16 +3,13 @@
 import { useSyncExternalStore } from 'react';
 import { APP_STORE_URL } from '@/lib/config';
 
-// localStorage-backed dismissal so the "Sentinel Bar" promo stays hidden across
-// reloads. useSyncExternalStore reads this client-only state without a hydration
-// mismatch or a setState-in-effect cascade.
+// Dismissal persisted in localStorage; useSyncExternalStore avoids a hydration mismatch.
 const DISMISSED_KEY = 'sentinel-banner-dismissed';
 const listeners = new Set<() => void>();
 
 function subscribe(callback: () => void): () => void {
   listeners.add(callback);
-  // Only react to our key; `storage` fires for every key changed in other tabs.
-  // A null key means localStorage was cleared, which also affects us.
+  // Fire only for our key (storage fires for any key in other tabs; null = cleared).
   const handler = (e: StorageEvent) => {
     if (e.key === DISMISSED_KEY || e.key === null) callback();
   };
@@ -27,8 +24,6 @@ function getSnapshot(): boolean {
   return localStorage.getItem(DISMISSED_KEY) !== '1';
 }
 
-// Server render never shows the banner (no localStorage); the client snapshot
-// takes over after hydration.
 function getServerSnapshot(): boolean {
   return false;
 }

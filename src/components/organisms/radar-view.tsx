@@ -17,9 +17,7 @@ interface RadarViewProps {
 export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredStory, setHoveredStory] = useState<PlottedStory | null>(null);
-  // `flip` is computed at hover time (where the container rect is available),
-  // so render never reads the ref. Desktop positioning lives in CSS — the
-  // .radar-tooltip media query consumes the --tooltip-* vars set in render.
+  // flip is precomputed on hover so render never reads the ref; CSS positions the tooltip.
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0, flip: false });
 
   const size = 700;
@@ -82,7 +80,6 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
 
   const sectorAngle = (2 * Math.PI) / TOPICS.length;
 
-  // Tick marks on outermost ring
   const tickCount = 72;
   const ticks = Array.from({ length: tickCount }, (_, i) => {
     const angle = (i / tickCount) * 2 * Math.PI - Math.PI / 2;
@@ -99,14 +96,11 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
 
   return (
     <div ref={containerRef} className="relative flex h-full items-center justify-center overflow-hidden bg-bg-base" onTouchStart={() => setHoveredStory(null)}>
-      {/* CRT scanline overlay */}
       <div className="radar-scanlines pointer-events-none absolute inset-0 z-[1]" />
-      {/* Vignette */}
       <div className="pointer-events-none absolute inset-0 z-[1]" style={{
         background: 'radial-gradient(circle at center, transparent 40%, rgba(10,10,12,0.5) 100%)',
       }} />
 
-      {/* Critical alert banner */}
       {criticalCount > 0 && (
         <div className="absolute left-0 right-0 top-0 z-10 border-b border-danger/30 bg-danger/10 px-4 py-1.5 text-center text-[11px] font-semibold tracking-wider text-danger radar-alert-pulse">
           {criticalCount} CRITICAL {criticalCount === 1 ? 'ALERT' : 'ALERTS'} DETECTED
@@ -119,31 +113,26 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
         style={{ position: 'relative', zIndex: 2 }}
       >
         <defs>
-          {/* Sweep trail conic gradient approximation */}
           <linearGradient id="sweep-trail" gradientTransform="rotate(0)">
             <stop offset="0%" stopColor={ACCENT_GREEN} stopOpacity="0.12" />
             <stop offset="100%" stopColor={ACCENT_GREEN} stopOpacity="0" />
           </linearGradient>
-          {/* Critical glow */}
           <radialGradient id="critical-glow">
             <stop offset="0%" stopColor={CRITICAL_COLOR} stopOpacity="0.7" />
             <stop offset="50%" stopColor={CRITICAL_COLOR} stopOpacity="0.2" />
             <stop offset="100%" stopColor={CRITICAL_COLOR} stopOpacity="0" />
           </radialGradient>
-          {/* Dot glow per topic */}
           {TOPICS.map((topic) => (
             <radialGradient key={topic.id} id={`glow-${topic.id}`}>
               <stop offset="0%" stopColor={topic.color} stopOpacity="0.4" />
               <stop offset="100%" stopColor={topic.color} stopOpacity="0" />
             </radialGradient>
           ))}
-          {/* Clip to radar circle */}
           <clipPath id="radar-clip">
             <circle cx={cx} cy={cy} r={outerR} />
           </clipPath>
         </defs>
 
-        {/* ── Sector wedge backgrounds ── */}
         <g clipPath="url(#radar-clip)">
           {TOPICS.map((topic, i) => {
             const startAngle = i * sectorAngle - Math.PI / 2;
@@ -161,7 +150,6 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
           })}
         </g>
 
-        {/* ── Concentric rings ── */}
         {[0.25, 0.5, 0.75, 1].map((frac) => (
           <circle
             key={frac}
@@ -175,7 +163,6 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
           />
         ))}
 
-        {/* ── Tick marks on outer ring ── */}
         {ticks.map((t, i) => (
           <line
             key={i}
@@ -189,7 +176,6 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
           />
         ))}
 
-        {/* ── Crosshair lines (cardinal directions) ── */}
         {[0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2].map((angle) => (
           <line
             key={angle}
@@ -204,7 +190,6 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
           />
         ))}
 
-        {/* ── Sector divider lines ── */}
         {TOPICS.map((topic, i) => {
           const angle = i * sectorAngle - Math.PI / 2;
           return (
@@ -221,15 +206,12 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
           );
         })}
 
-        {/* ── Rotating sweep line + trail ── */}
         <g className="radar-sweep" style={{ transformOrigin: `${cx}px ${cy}px` }}>
-          {/* Sweep trail wedge */}
           <path
             d={sectorPath(cx, cy, outerR, -0.7, 0)}
             fill={ACCENT_GREEN}
             opacity="0.04"
           />
-          {/* Sweep line */}
           <line
             x1={cx}
             y1={cy}
@@ -241,7 +223,6 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
           />
         </g>
 
-        {/* ── Story dots ── */}
         {plotted.map((p) => {
           // Calculate angle for sweep-blink animation delay
           const dx = p.x - cx;
@@ -251,7 +232,6 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
 
           return (
             <g key={p.story.id}>
-              {/* Ambient glow behind dot */}
               <circle
                 cx={p.x}
                 cy={p.y}
@@ -260,7 +240,6 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
                 opacity={p.critical ? 1 : 0.5}
                 className={p.critical ? 'radar-pulse' : ''}
               />
-              {/* Invisible larger touch target for mobile */}
               <circle
                 cx={p.x}
                 cy={p.y}
@@ -272,7 +251,6 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
                 onMouseEnter={(e) => handleDotHover(p, e)}
                 onMouseLeave={handleDotLeave}
               />
-              {/* The visible dot */}
               <circle
                 cx={p.x}
                 cy={p.y}
@@ -291,13 +269,11 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
           );
         })}
 
-        {/* ── Center crosshair ── */}
         <circle cx={cx} cy={cy} r="4" fill="none" stroke={ACCENT_GREEN} strokeWidth="1" opacity="0.5" />
         <circle cx={cx} cy={cy} r="1.5" fill={ACCENT_GREEN} opacity="0.8" />
         <line x1={cx - 10} y1={cy} x2={cx + 10} y2={cy} stroke={ACCENT_GREEN} strokeWidth="0.5" opacity="0.4" />
         <line x1={cx} y1={cy - 10} x2={cx} y2={cy + 10} stroke={ACCENT_GREEN} strokeWidth="0.5" opacity="0.4" />
 
-        {/* ── Sector labels ── */}
         {TOPICS.map((topic, i) => {
           const midAngle = (i + 0.5) * sectorAngle - Math.PI / 2;
           const labelR = outerR + 40;
@@ -336,7 +312,6 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
         })}
       </svg>
 
-      {/* Tooltip — fixed top-center on mobile, cursor-following on desktop */}
       {hoveredStory && (
         <div
           className="radar-tooltip pointer-events-none absolute z-50 max-sm:left-2 max-sm:right-2 max-sm:top-10"
@@ -352,7 +327,6 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
         </div>
       )}
 
-      {/* Legend — single centered bar */}
       <div className="absolute bottom-0 left-0 right-0 z-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-border/50 bg-bg-base/80 px-3 py-2 text-[10px] text-text-muted backdrop-blur-sm">
         <span className="flex items-center gap-1.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full bg-danger" style={{ boxShadow: `0 0 4px ${CRITICAL_COLOR}` }} />

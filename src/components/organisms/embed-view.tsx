@@ -53,10 +53,8 @@ function CompactStory({ story }: { readonly story: Story }) {
 export function EmbedView({ initialStories }: EmbedViewProps) {
   const [stories, setStories] = useState<readonly Story[]>(initialStories);
   const [activeTopic, setActiveTopic] = useState<string | null>(null);
-  // `now` drives the 24h window; kept in state so the filter stays pure.
   const [now, setNow] = useState(() => Date.now());
 
-  // Auto-refresh every 2 minutes
   useEffect(() => {
     const interval = setInterval(async () => {
       setNow(Date.now());
@@ -73,7 +71,6 @@ export function EmbedView({ initialStories }: EmbedViewProps) {
     return () => clearInterval(interval);
   }, []);
 
-  // Filter to last 24h
   const recent = useMemo(() => {
     const cutoff = now - DAY_MS;
     return stories.filter((s) => {
@@ -82,7 +79,6 @@ export function EmbedView({ initialStories }: EmbedViewProps) {
     });
   }, [stories, now]);
 
-  // Topic counts
   const topicCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const topic of TOPICS) counts[topic.id] = 0;
@@ -90,7 +86,6 @@ export function EmbedView({ initialStories }: EmbedViewProps) {
     return counts;
   }, [recent]);
 
-  // Filtered stories
   const display = useMemo(() => {
     if (!activeTopic) return recent;
     return recent.filter((s) => categorizeTopic(s) === activeTopic);
@@ -107,7 +102,6 @@ export function EmbedView({ initialStories }: EmbedViewProps) {
 
   return (
     <div className="flex h-screen flex-col bg-bg-base text-text-primary">
-      {/* Header */}
       <header className="flex items-center justify-between border-b border-border px-3 py-2">
         <a
           href="/"
@@ -127,7 +121,6 @@ export function EmbedView({ initialStories }: EmbedViewProps) {
         </div>
       </header>
 
-      {/* Topic pills */}
       <div className="flex gap-0 overflow-x-auto border-b border-border">
         <button
           onClick={() => setActiveTopic(null)}
@@ -152,7 +145,6 @@ export function EmbedView({ initialStories }: EmbedViewProps) {
         ))}
       </div>
 
-      {/* Stories */}
       <main className="flex-1 overflow-y-auto">
         {display.length === 0 ? (
           <div className="px-3 py-12 text-center text-[11px] text-text-muted">
@@ -165,7 +157,6 @@ export function EmbedView({ initialStories }: EmbedViewProps) {
         )}
       </main>
 
-      {/* Footer */}
       <footer className="flex items-center justify-between border-t border-border px-3 py-1">
         <span className="text-[9px] text-text-muted">
           auto-refresh 2m

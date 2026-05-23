@@ -8,11 +8,9 @@ interface StoryMetaProps {
   readonly topicColor: string;
   readonly showScore?: boolean;
   readonly className?: string;
-  /** Extra trailing items rendered inside the row (e.g. inline tags). */
   readonly children?: React.ReactNode;
 }
 
-/** Muted metadata line: source badge, author, relative time, optional score. */
 export function StoryMeta({
   story,
   topicColor,

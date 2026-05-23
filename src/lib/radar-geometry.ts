@@ -2,7 +2,7 @@ import type { Story } from './types';
 import { TOPICS, categorizeTopic } from './topics';
 import { isCritical } from './classification';
 
-// ── Seeded PRNG for deterministic but random-looking placement ──
+// Seeded PRNG for deterministic placement.
 export function seededRandom(seed: number): () => number {
   let s = seed;
   return () => {
@@ -16,7 +16,7 @@ export function normalBetween(rng: () => number, min: number, max: number): numb
   return min + (rng() + rng()) / 2 * (max - min);
 }
 
-// ── SVG arc path for a sector wedge ──
+// SVG arc path for a sector wedge.
 export function sectorPath(
   cx: number,
   cy: number,
@@ -42,8 +42,7 @@ export interface PlottedStory {
   readonly y: number;
 }
 
-// Mutable view used only during the in-place collision relaxation below;
-// plotStories returns these widened to the readonly PlottedStory contract.
+// Mutable during the in-place relaxation; returned widened to readonly PlottedStory.
 interface MutablePlottedStory extends Omit<PlottedStory, 'x' | 'y'> {
   x: number;
   y: number;

@@ -7,7 +7,6 @@ interface StoryTooltipProps {
   readonly className?: string;
 }
 
-/** Shared tooltip card used in the radar view and sector map. */
 export function StoryTooltip({ story, topicColor, className }: StoryTooltipProps) {
   return (
     <div className={className} style={{ borderColor: topicColor }}>

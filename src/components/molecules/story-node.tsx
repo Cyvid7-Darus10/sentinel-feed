@@ -8,7 +8,6 @@ interface StoryNodeProps {
   readonly topicColor: string;
 }
 
-/** Full-width story row used in the list view. */
 export function StoryNode({ story, topicColor }: StoryNodeProps) {
   const scoreText = formatScore(story.source, story.score);
 

@@ -1,7 +1,6 @@
 import 'react';
 
-// Allow the CSS custom properties this app sets via inline `style` without
-// casting through `as React.CSSProperties` at every call site.
+// Lets inline styles set CSS custom properties without casting to React.CSSProperties.
 declare module 'react' {
   interface CSSProperties {
     '--tab-color'?: string;

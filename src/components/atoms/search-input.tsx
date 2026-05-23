@@ -4,7 +4,6 @@ interface SearchInputProps {
   readonly className?: string;
 }
 
-/** Search text field; emits the extracted value rather than the raw event. */
 export function SearchInput({ value, onChange, className }: SearchInputProps) {
   return (
     <input

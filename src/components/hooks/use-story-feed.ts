@@ -9,16 +9,10 @@ interface StoryFeed {
   readonly stories: readonly Story[];
   readonly health: SourceHealth;
   readonly rateLimited: boolean;
-  /** Wall-clock time of the latest tick; drives time-window filtering. */
   readonly now: number;
 }
 
-/**
- * Seeds from server-rendered data, then polls /api/stories and /api/sources
- * every REFRESH_INTERVAL_MS. `now` advances each tick so callers can filter by
- * time window without an impure Date.now() during render. A 429 from either
- * endpoint flips `rateLimited` and pauses updates until the next successful poll.
- */
+/** Polls /api/stories and /api/sources every REFRESH_INTERVAL_MS, seeded from SSR data. */
 export function useStoryFeed(
   initialStories: readonly Story[],
   initialHealth: SourceHealth,
@@ -30,8 +24,7 @@ export function useStoryFeed(
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    // `cancelled` discards results from a tick that is still in flight when the
-    // range changes (and the effect re-runs), so stale-range data can't land.
+    // Discard in-flight results if the range changed (effect re-ran).
     let cancelled = false;
     const interval = setInterval(async () => {
       setNow(Date.now());

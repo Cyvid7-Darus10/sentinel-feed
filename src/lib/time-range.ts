@@ -1,6 +1,5 @@
 import { HOUR_MS, DAY_MS } from './config';
 
-/** Time windows offered in the dashboard filter bar. */
 export type TimeRange = '6h' | '12h' | '24h' | '7d';
 
 export const TIME_RANGES: readonly { id: TimeRange; label: string }[] = [
@@ -15,7 +14,6 @@ export function timeRangeToDays(range: TimeRange): number {
   return range === '7d' ? 7 : 1;
 }
 
-/** The range expressed as a duration in milliseconds. */
 export function timeRangeToMs(range: TimeRange): number {
   switch (range) {
     case '6h':

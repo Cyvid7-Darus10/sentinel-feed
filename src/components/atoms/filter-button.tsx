@@ -5,7 +5,6 @@ interface FilterButtonProps {
   readonly title?: string;
 }
 
-/** A pill-style toggle used for view modes, source filters, and time ranges. */
 export function FilterButton({ active, onClick, children, title }: FilterButtonProps) {
   return (
     <button

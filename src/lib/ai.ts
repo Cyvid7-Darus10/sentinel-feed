@@ -7,7 +7,6 @@ const MAX_BATCH_SIZE = 50;
 const MAX_SUMMARY_LENGTH = 120;
 const DESCRIPTION_PREVIEW_LENGTH = 120;
 
-// One result per story. `summary` is null when the story isn't relevant.
 const aiResultSchema = z.object({
   relevant: z.boolean(),
   summary: z.string().nullable(),
@@ -20,7 +19,6 @@ export async function enrichStories(
 ): Promise<Story[]> {
   if (stories.length === 0) return [];
 
-  // Skip AI if explicitly disabled
   if (process.env.ENABLE_AI_ENRICHMENT === 'false') {
     return [...stories];
   }
@@ -36,7 +34,6 @@ export async function enrichStories(
       relevant: results[i]?.relevant ?? true,
       summary: normalizeSummary(results[i]?.summary),
     }));
-    // Stories beyond the cap pass through without AI — still saved
     return [...enriched, ...skipped];
   } catch {
     // If AI fails, return stories without summaries — still useful
@@ -58,9 +55,7 @@ async function batchAnalyze(
     )
     .join('\n');
 
-  // generateText + Output.array handles JSON extraction + schema validation, so
-  // a malformed model response throws (caught by the caller) rather than
-  // silently corrupting data. (`generateObject` is deprecated in AI SDK v6.)
+  // Output.array validates structured output; malformed responses throw (caught by caller).
   const { output } = await generateText({
     model: MODEL,
     output: Output.array({ element: aiResultSchema }),
@@ -73,8 +68,7 @@ Return exactly one result per story, in the same order as the input.`,
     temperature: 0,
   });
 
-  // The model can return a different count than requested; only trust a 1:1
-  // mapping, otherwise fall back to neutral defaults (keep everything).
+  // Trust only a 1:1 mapping; otherwise keep everything.
   if (output.length !== stories.length) {
     console.warn(
       `[ai] Expected ${stories.length} results, got ${output.length}; using neutral defaults`

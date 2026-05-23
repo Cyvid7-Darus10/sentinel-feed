@@ -3,9 +3,16 @@
 import type { SourceId } from '@/lib/types';
 import { SOURCE_FILTER_OPTIONS } from '@/lib/sources';
 import { TIME_RANGES, type TimeRange } from '@/lib/time-range';
-import { ViewToggle, type ViewMode } from '../molecules/view-toggle';
 import { FilterGroup } from '../molecules/filter-group';
 import { SearchInput } from '../atoms/search-input';
+
+export type ViewMode = 'list' | 'map' | 'radar';
+
+const VIEW_MODES: readonly { id: ViewMode; label: string; title: string }[] = [
+  { id: 'radar', label: 'RADAR', title: 'Radar view' },
+  { id: 'map', label: 'MAP', title: 'Sector map view' },
+  { id: 'list', label: 'LIST', title: 'List view' },
+];
 
 interface DashboardToolbarProps {
   readonly viewMode: ViewMode;
@@ -36,7 +43,6 @@ export function DashboardToolbar({
 }: DashboardToolbarProps) {
   return (
     <header className="border-b border-border bg-bg-primary">
-      {/* Top row: brand + view toggle + search + stats */}
       <div className="flex items-center gap-x-4 px-4 py-2">
         <span className="shrink-0 text-[14px] font-bold uppercase tracking-[0.1em] text-text-bright">
           Sentinel
@@ -44,7 +50,7 @@ export function DashboardToolbar({
 
         <div className="hidden h-4 w-px bg-border sm:block" />
 
-        <ViewToggle value={viewMode} onChange={onViewModeChange} />
+        <FilterGroup options={VIEW_MODES} value={viewMode} onChange={onViewModeChange} />
 
         <SearchInput
           value={searchQuery}
@@ -67,7 +73,6 @@ export function DashboardToolbar({
         </div>
       </div>
 
-      {/* Bottom row: filters (scrollable on mobile) */}
       <div className="flex items-center gap-3 overflow-x-auto px-4 pb-2">
         <FilterGroup
           options={SOURCE_FILTER_OPTIONS}
@@ -77,13 +82,8 @@ export function DashboardToolbar({
 
         <div className="h-4 w-px shrink-0 bg-border" />
 
-        <FilterGroup
-          options={TIME_RANGES}
-          value={activeRange}
-          onChange={onRangeChange}
-        />
+        <FilterGroup options={TIME_RANGES} value={activeRange} onChange={onRangeChange} />
 
-        {/* Mobile search (visible only on small screens) */}
         <SearchInput
           value={searchQuery}
           onChange={onSearchChange}

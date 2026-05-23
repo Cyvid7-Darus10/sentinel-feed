@@ -3,6 +3,7 @@ import { FilterButton } from '../atoms/filter-button';
 interface FilterOption<T> {
   readonly id: T;
   readonly label: string;
+  readonly title?: string;
 }
 
 interface FilterGroupProps<T> {
@@ -11,7 +12,6 @@ interface FilterGroupProps<T> {
   readonly onChange: (id: T) => void;
 }
 
-/** A horizontal group of mutually-exclusive filter buttons (sources, time ranges). */
 export function FilterGroup<T>({ options, value, onChange }: FilterGroupProps<T>) {
   return (
     <div className="flex shrink-0 items-center gap-1">
@@ -20,6 +20,7 @@ export function FilterGroup<T>({ options, value, onChange }: FilterGroupProps<T>
           key={String(o.id ?? 'all')}
           active={value === o.id}
           onClick={() => onChange(o.id)}
+          title={o.title}
         >
           {o.label}
         </FilterButton>
