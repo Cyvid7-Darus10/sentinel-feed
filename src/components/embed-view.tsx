@@ -5,7 +5,7 @@ import type { Story } from '@/lib/types';
 import { TOPICS, categorizeTopic } from '@/lib/topics';
 import { getSourceConfig, formatScore } from '@/lib/sources';
 import { isCritical } from '@/lib/classification';
-import { DEFAULT_TOPIC_COLOR, CRITICAL_COLOR, API } from '@/lib/config';
+import { DEFAULT_TOPIC_COLOR, CRITICAL_COLOR, API, DAY_MS } from '@/lib/config';
 import { relativeTime, isSafeUrl } from '@/lib/utils';
 
 interface EmbedViewProps {
@@ -76,7 +76,7 @@ export function EmbedView({ initialStories }: EmbedViewProps) {
 
   // Filter to last 24h
   const recent = useMemo(() => {
-    const cutoff = now - 24 * 3_600_000;
+    const cutoff = now - DAY_MS;
     return stories.filter((s) => {
       const t = new Date(s.publishedAt ?? s.fetchedAt).getTime();
       return t > cutoff;
