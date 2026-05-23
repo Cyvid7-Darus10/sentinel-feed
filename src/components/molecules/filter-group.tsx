@@ -12,7 +12,12 @@ interface FilterGroupProps<T> {
   readonly onChange: (id: T) => void;
 }
 
-export function FilterGroup<T>({ options, value, onChange }: FilterGroupProps<T>) {
+// T is constrained to primitives so String(id) yields stable, collision-free keys.
+export function FilterGroup<T extends string | null>({
+  options,
+  value,
+  onChange,
+}: FilterGroupProps<T>) {
   return (
     <div className="flex shrink-0 items-center gap-1">
       {options.map((o) => (

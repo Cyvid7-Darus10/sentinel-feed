@@ -116,7 +116,7 @@ export function plotStories(
     }
   }
 
-  // ── Simple iterative collision relaxation (no D3 needed) ──
+  // Iterative collision relaxation (no D3).
   const padding = 2;
   for (let iter = 0; iter < 12; iter++) {
     for (let a = 0; a < plotted.length; a++) {
