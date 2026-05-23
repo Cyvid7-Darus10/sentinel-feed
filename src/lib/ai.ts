@@ -1,13 +1,19 @@
-import { generateText } from 'ai';
+import { generateText, Output } from 'ai';
+import { z } from 'zod';
 import type { Story } from './types';
 
 const MODEL = 'anthropic/claude-haiku-4.5';
 const MAX_BATCH_SIZE = 50;
+const MAX_SUMMARY_LENGTH = 120;
+const DESCRIPTION_PREVIEW_LENGTH = 120;
 
-interface AiResult {
-  readonly relevant: boolean;
-  readonly summary: string | null;
-}
+// One result per story. `summary` is null when the story isn't relevant.
+const aiResultSchema = z.object({
+  relevant: z.boolean(),
+  summary: z.string().nullable(),
+});
+
+type AiResult = z.infer<typeof aiResultSchema>;
 
 export async function enrichStories(
   stories: readonly Story[]
@@ -28,7 +34,7 @@ export async function enrichStories(
     const enriched = toEnrich.map((story, i) => ({
       ...story,
       relevant: results[i]?.relevant ?? true,
-      summary: results[i]?.summary ?? null,
+      summary: normalizeSummary(results[i]?.summary),
     }));
     // Stories beyond the cap pass through without AI — still saved
     return [...enriched, ...skipped];
@@ -42,50 +48,41 @@ async function batchAnalyze(
   stories: readonly Story[]
 ): Promise<AiResult[]> {
   const numbered = stories
-    .map((s, i) => `${i + 1}. "${s.title}"${s.description ? ` — ${s.description.slice(0, 120)}` : ''}`)
+    .map(
+      (s, i) =>
+        `${i + 1}. "${s.title}"${
+          s.description
+            ? ` — ${s.description.slice(0, DESCRIPTION_PREVIEW_LENGTH)}`
+            : ''
+        }`
+    )
     .join('\n');
 
-  const { text } = await generateText({
+  // generateText + Output.array handles JSON extraction + schema validation, so
+  // a malformed model response throws (caught by the caller) rather than
+  // silently corrupting data. (`generateObject` is deprecated in AI SDK v6.)
+  const { output } = await generateText({
     model: MODEL,
-    system: `You are a tech news relevance filter for software engineers. For each story title, determine:
-1. Is it relevant to software engineering, programming, AI/ML, DevOps, or tech industry? (true/false)
-2. A one-line summary of why it matters to developers (max 100 chars, or null if not relevant).
+    output: Output.array({ element: aiResultSchema }),
+    system: `You are a tech news relevance filter for software engineers. For each story, decide:
+- relevant: true if it relates to software engineering, programming, AI/ML, DevOps, or the tech industry; false otherwise.
+- summary: a one-line reason it matters to developers (max ${MAX_SUMMARY_LENGTH} chars), or null when not relevant.
 
-Respond ONLY with a JSON array of objects: [{"relevant": true, "summary": "..."}, ...]
-No markdown, no explanation. Array length must match input count.`,
+Return exactly one result per story, in the same order as the input.`,
     prompt: `Analyze these ${stories.length} stories:\n${numbered}`,
     temperature: 0,
   });
 
-  return parseAiResponse(text, stories.length);
+  // The model can return a different count than requested; only trust a 1:1
+  // mapping, otherwise fall back to neutral defaults (keep everything).
+  if (output.length !== stories.length) {
+    return stories.map(() => ({ relevant: true, summary: null }));
+  }
+
+  return output;
 }
 
-function parseAiResponse(text: string, expectedCount: number): AiResult[] {
-  // Extract JSON array from response (handle potential markdown wrapping)
-  const jsonMatch = text.match(/\[[\s\S]*\]/);
-  if (!jsonMatch) {
-    return Array.from({ length: expectedCount }, () => ({
-      relevant: true,
-      summary: null,
-    }));
-  }
-
-  try {
-    const parsed = JSON.parse(jsonMatch[0]) as AiResult[];
-    if (!Array.isArray(parsed) || parsed.length !== expectedCount) {
-      return Array.from({ length: expectedCount }, () => ({
-        relevant: true,
-        summary: null,
-      }));
-    }
-    return parsed.map((r) => ({
-      relevant: typeof r.relevant === 'boolean' ? r.relevant : true,
-      summary: typeof r.summary === 'string' ? r.summary.slice(0, 120) : null,
-    }));
-  } catch {
-    return Array.from({ length: expectedCount }, () => ({
-      relevant: true,
-      summary: null,
-    }));
-  }
+function normalizeSummary(summary: string | null | undefined): string | null {
+  if (typeof summary !== 'string') return null;
+  return summary.slice(0, MAX_SUMMARY_LENGTH);
 }
