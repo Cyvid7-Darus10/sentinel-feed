@@ -103,15 +103,21 @@ Stories are automatically classified into six sectors using keyword and tag matc
 
 ## Critical Alert Detection
 
-Stories matching security-critical patterns are automatically flagged:
+Stories are automatically flagged as critical when their title, summary, or description matches security-sensitive patterns. Detection is pure regex — no AI required, zero latency.
 
-- CVE identifiers (`CVE-2024-XXXX`)
-- Vulnerability disclosures, exploits, zero-days
-- Ransomware, backdoors, supply chain attacks
-- Remote code execution (RCE)
-- Breaches and critical patches
+**What triggers a critical alert:**
 
-These appear as pulsing red dots in Radar view and trigger the **CRITICAL ALERTS DETECTED** banner.
+| Category | Patterns matched |
+|----------|-----------------|
+| **CVEs & advisories** | CVE identifiers, security advisories/bulletins, Patch Tuesday |
+| **Vulnerabilities** | Zero-days, exploits, actively exploited flaws |
+| **Attack vectors** | SQL injection, XSS/SSRF, code/path/directory traversal, buffer/heap overflow, use-after-free, out-of-bounds |
+| **Access violations** | Privilege escalation, authentication bypass, session hijacking, credential stuffing/dumping, MITM |
+| **Malicious software** | Malware, ransomware, trojans, rootkits, backdoors, botnets |
+| **Incidents** | Data breaches/leaks/exfiltration, phishing, DDoS, supply chain attacks/compromises |
+| **Critical fixes** | RCE, arbitrary code execution, critical patches/flaws/bugs |
+
+These appear as pulsing red dots in Radar view and trigger the **CRITICAL ALERTS DETECTED** banner. In the menu bar app, critical stories surface to the top with native macOS notifications.
 
 ## Tech Stack
 
@@ -202,12 +208,14 @@ sentinel-feed/
 │   │       ├── stories/route.ts    # GET /api/stories — filtered story list
 │   │       ├── sources/route.ts    # GET /api/sources — source health status
 │   │       └── cleanup/route.ts    # Cron: prune blobs older than 7 days
-│   ├── components/
-│   │   ├── tactical-map.tsx        # Main dashboard — filters, view switching
-│   │   ├── radar-view.tsx          # Radar — SVG circle, dots, sweep, tooltips
-│   │   ├── sector-map.tsx          # Map — topic grid with story cards
-│   │   ├── story-node.tsx          # List — story card with score + meta
-│   │   └── embed-view.tsx          # Compact feed for menu bar app
+│   ├── components/                 # Atomic design: atoms → molecules → organisms
+│   │   ├── atoms/                  # badge, filter-button, search-input, tab, topic-dot
+│   │   ├── molecules/              # story-meta/node/tooltip, filter-group, promo-banner
+│   │   ├── organisms/              # dashboard-toolbar, story-list-view, radar/sector/embed views
+│   │   ├── templates/              # tactical-map — dashboard composition root
+│   │   └── hooks/                  # use-story-feed — polling + feed state
+│   ├── types/
+│   │   └── react-css.d.ts          # CSS custom-property typing
 │   └── lib/
 │       ├── fetchers/
 │       │   ├── index.ts            # Parallel fetcher orchestration + dedup
@@ -220,8 +228,13 @@ sentinel-feed/
 │       │   ├── infoq.ts           # InfoQ RSS feed
 │       │   └── rss.ts             # Shared RSS/Atom feed parser
 │       ├── ai.ts                   # AI enrichment — summaries + filtering
+│       ├── classification.ts       # Critical-alert keyword detection
+│       ├── config.ts               # Centralized constants
+│       ├── cron-auth.ts            # CRON_SECRET bearer-token check
+│       ├── radar-geometry.ts       # Radar layout math (pure, tested)
 │       ├── sources.ts              # Source config — badges, names, scoring
 │       ├── storage.ts              # Vercel Blob CRUD operations
+│       ├── time-range.ts           # Time-window type + helpers
 │       ├── topics.ts               # Keyword-based topic classification
 │       ├── types.ts                # Shared TypeScript interfaces
 │       └── utils.ts                # Date formatting, URL normalization

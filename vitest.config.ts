@@ -8,8 +8,12 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary'],
-      include: ['src/lib/**/*.ts'],
-      exclude: ['src/lib/storage.ts'], // Requires Vercel Blob runtime
+      include: ['src/lib/**/*.ts', 'src/app/api/**/*.ts'],
+      exclude: [
+        'src/lib/storage.ts', // Requires Vercel Blob runtime
+        '**/__tests__/**',
+        '**/*.test.ts',
+      ],
     },
   },
   resolve: {

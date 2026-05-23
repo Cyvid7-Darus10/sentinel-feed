@@ -318,6 +318,17 @@ body {
   }
 }
 
+/* Desktop: the tooltip follows the cursor. The coordinates are passed from the
+   radar component as --tooltip-* custom properties, so the breakpoint decision
+   lives in CSS rather than JS. Below 640px the max-sm:* utilities pin it instead. */
+@media (min-width: 640px) {
+  .radar-tooltip {
+    left: var(--tooltip-x);
+    top: var(--tooltip-y);
+    transform: translateX(var(--tooltip-flip, 0));
+  }
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }

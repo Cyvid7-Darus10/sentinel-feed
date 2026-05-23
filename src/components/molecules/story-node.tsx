@@ -1,6 +1,7 @@
 import type { Story } from '@/lib/types';
-import { getSourceConfig, formatScore } from '@/lib/sources';
-import { relativeTime, isSafeUrl } from '@/lib/utils';
+import { formatScore } from '@/lib/sources';
+import { isSafeUrl } from '@/lib/utils';
+import { StoryMeta } from './story-meta';
 
 interface StoryNodeProps {
   readonly story: Story;
@@ -8,9 +9,7 @@ interface StoryNodeProps {
 }
 
 export function StoryNode({ story, topicColor }: StoryNodeProps) {
-  const source = getSourceConfig(story.source);
   const scoreText = formatScore(story.source, story.score);
-  const displayTime = story.publishedAt ?? story.fetchedAt;
 
   return (
     <a
@@ -29,14 +28,17 @@ export function StoryNode({ story, topicColor }: StoryNodeProps) {
               {story.summary}
             </p>
           )}
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-text-muted sm:text-[11px]">
-            <span className={`badge ${source.badgeClass}`}>{source.badge}</span>
-            {story.author && <span>{story.author}</span>}
-            <span>{relativeTime(displayTime)}</span>
+          <StoryMeta
+            story={story}
+            topicColor={topicColor}
+            className="mt-2 text-[12px] sm:text-[11px]"
+          >
             {story.tags.length > 0 && (
-              <span style={{ color: topicColor }}>{story.tags.slice(0, 3).join(', ')}</span>
+              <span style={{ color: topicColor }}>
+                {story.tags.slice(0, 3).join(', ')}
+              </span>
             )}
-          </div>
+          </StoryMeta>
         </div>
         {scoreText && (
           <span

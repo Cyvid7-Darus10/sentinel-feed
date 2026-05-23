@@ -20,6 +20,12 @@ export const FETCHER_TIMEOUT_MS = 10_000;
 /** How often the client polls for fresh stories (ms). */
 export const REFRESH_INTERVAL_MS = 60_000;
 
+/** Milliseconds in one hour. */
+export const HOUR_MS = 60 * 60 * 1000;
+
+/** Milliseconds in one day (24 hours). */
+export const DAY_MS = 24 * HOUR_MS;
+
 /** How many days of blobs the cleanup cron keeps. */
 export const RETENTION_DAYS = 7;
 

@@ -1,4 +1,4 @@
-import { TacticalMap } from '@/components/tactical-map';
+import { TacticalMap } from '@/components/templates/tactical-map';
 import { readStoriesForDays, readSourceHealth } from '@/lib/storage';
 import { SITE_URL } from '@/lib/config';
 
