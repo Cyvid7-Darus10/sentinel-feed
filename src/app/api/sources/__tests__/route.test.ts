@@ -38,7 +38,17 @@ describe('GET /api/sources', () => {
     expect(body.sources.hackernews.name).toBe('Hacker News');
   });
 
+  it('sets CDN cache and CORS headers so polling hits the edge', async () => {
+    mockRead.mockResolvedValueOnce({ sources: {}, updatedAt: '2026-04-01T12:00:00Z' });
+
+    const res = await GET();
+
+    expect(res.headers.get('Cache-Control')).toContain('s-maxage=60');
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*');
+  });
+
   it('returns a 500 envelope with empty sources when the read throws', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     mockRead.mockRejectedValueOnce(new Error('blob error'));
 
     const res = await GET();
