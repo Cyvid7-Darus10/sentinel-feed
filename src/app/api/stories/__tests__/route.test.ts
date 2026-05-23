@@ -127,4 +127,16 @@ describe('GET /api/stories', () => {
       expect(res.headers.get('Cache-Control')).toContain('s-maxage=60');
     });
   });
+
+  describe('error handling', () => {
+    it('returns a 500 JSON envelope when the storage read throws', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockRead.mockRejectedValueOnce(new Error('blob unavailable'));
+
+      const res = await GET(request());
+
+      expect(res.status).toBe(500);
+      expect(await res.json()).toEqual({ error: 'Internal server error' });
+    });
+  });
 });

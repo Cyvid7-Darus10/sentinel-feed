@@ -30,6 +30,9 @@ export function useStoryFeed(
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
+    // `cancelled` discards results from a tick that is still in flight when the
+    // range changes (and the effect re-runs), so stale-range data can't land.
+    let cancelled = false;
     const interval = setInterval(async () => {
       setNow(Date.now());
       try {
@@ -38,6 +41,7 @@ export function useStoryFeed(
           fetch(API.stories(days)),
           fetch(API.sources),
         ]);
+        if (cancelled) return;
         if (storiesRes.status === 429 || healthRes.status === 429) {
           setRateLimited(true);
           return;
@@ -55,7 +59,10 @@ export function useStoryFeed(
         // next poll retries
       }
     }, REFRESH_INTERVAL_MS);
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [activeRange]);
 
   return { stories, health, rateLimited, now };

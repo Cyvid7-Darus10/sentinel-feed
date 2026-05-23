@@ -11,10 +11,15 @@ const listeners = new Set<() => void>();
 
 function subscribe(callback: () => void): () => void {
   listeners.add(callback);
-  window.addEventListener('storage', callback);
+  // Only react to our key; `storage` fires for every key changed in other tabs.
+  // A null key means localStorage was cleared, which also affects us.
+  const handler = (e: StorageEvent) => {
+    if (e.key === DISMISSED_KEY || e.key === null) callback();
+  };
+  window.addEventListener('storage', handler);
   return () => {
     listeners.delete(callback);
-    window.removeEventListener('storage', callback);
+    window.removeEventListener('storage', handler);
   };
 }
 

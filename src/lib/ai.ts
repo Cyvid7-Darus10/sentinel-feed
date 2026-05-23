@@ -76,6 +76,9 @@ Return exactly one result per story, in the same order as the input.`,
   // The model can return a different count than requested; only trust a 1:1
   // mapping, otherwise fall back to neutral defaults (keep everything).
   if (output.length !== stories.length) {
+    console.warn(
+      `[ai] Expected ${stories.length} results, got ${output.length}; using neutral defaults`
+    );
     return stories.map(() => ({ relevant: true, summary: null }));
   }
 

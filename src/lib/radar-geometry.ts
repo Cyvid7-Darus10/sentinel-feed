@@ -7,7 +7,7 @@ export function seededRandom(seed: number): () => number {
   let s = seed;
   return () => {
     s = (s * 1664525 + 1013904223) & 0xffffffff;
-    return (s >>> 0) / 0xffffffff;
+    return (s >>> 0) / 0x100000000;
   };
 }
 
@@ -38,6 +38,13 @@ export interface PlottedStory {
   readonly topicColor: string;
   readonly critical: boolean;
   readonly dotR: number;
+  readonly x: number;
+  readonly y: number;
+}
+
+// Mutable view used only during the in-place collision relaxation below;
+// plotStories returns these widened to the readonly PlottedStory contract.
+interface MutablePlottedStory extends Omit<PlottedStory, 'x' | 'y'> {
   x: number;
   y: number;
 }
@@ -65,7 +72,7 @@ export function plotStories(
   }
 
   const sectorAngle = (2 * Math.PI) / TOPICS.length;
-  const plotted: PlottedStory[] = [];
+  const plotted: MutablePlottedStory[] = [];
 
   for (let i = 0; i < TOPICS.length; i++) {
     const topic = TOPICS[i];
