@@ -186,9 +186,10 @@ body {
 }
 
 /* Fade the last row at the cell boundary so a clipped story reads as
-   "more below" rather than an abrupt cut. The +N more / View all footer
-   carries the affordance. */
+   "more below" rather than an abrupt cut. Applied only when stories are
+   hidden (see sector-map.tsx); the +N more footer carries the affordance. */
 .sector-feed {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 14px), transparent);
   mask-image: linear-gradient(to bottom, #000 calc(100% - 14px), transparent);
 }
 
