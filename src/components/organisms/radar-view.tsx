@@ -13,7 +13,8 @@ interface RadarViewProps {
   readonly onSelectTopic: (topicId: string) => void;
 }
 
-/** Width of the briefing card; mirrors `.radar-tooltip-inner` so it never clips the edge. */
+/** Briefing card width (300px in `.radar-tooltip-inner`) plus a right-edge gutter,
+ *  used to clamp the cursor-following position so the card never clips the edge. */
 const TOOLTIP_WIDTH_PX = 320;
 /** Fallback position for briefings opened without a cursor (touch / keyboard). */
 const PINNED_FALLBACK_POS = { x: 8, y: 8, flip: false } as const;
@@ -54,6 +55,9 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
 
   const handleDotHover = useCallback(
     (p: PlottedStory, e: React.MouseEvent) => {
+      // A mouse interaction means any pending touch is over; clear a possibly
+      // stranded flag (interrupted/scrolled tap) so this click isn't swallowed.
+      touchHandledRef.current = false;
       setHoveredStory(p);
       setTooltipPos(computeTooltipPos(e.clientX, e.clientY));
     },
@@ -402,6 +406,9 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
           role="dialog"
           aria-label="Story briefing"
           tabIndex={-1}
+          // Keep taps inside the card from bubbling to the container's clearAll,
+          // which would unmount the card before its buttons receive their click.
+          onTouchStart={(e) => e.stopPropagation()}
           className={`radar-tooltip radar-card-enter absolute z-50 outline-none max-sm:right-2 max-sm:left-2 ${
             criticalCount > 0 ? 'max-sm:top-14' : 'max-sm:top-10'
           }`}
