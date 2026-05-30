@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import type { Story } from '@/lib/types';
 import { TOPICS } from '@/lib/topics';
 import { CRITICAL_COLOR, CRITICAL_COLOR_LIGHT, ACCENT_GREEN } from '@/lib/config';
-import { isSafeUrl } from '@/lib/utils';
 import { plotStories, sectorPath, type PlottedStory } from '@/lib/radar-geometry';
 import { StoryTooltip } from '../molecules/story-tooltip';
 import { TopicDot } from '../atoms/topic-dot';
@@ -16,9 +15,14 @@ interface RadarViewProps {
 
 export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  // A blip can be in two states: hovered (transient desktop preview that follows
+  // the cursor) or selected (a pinned, interactive briefing). Selecting never
+  // navigates — opening the source is an explicit action inside the card.
   const [hoveredStory, setHoveredStory] = useState<PlottedStory | null>(null);
+  const [selectedStory, setSelectedStory] = useState<PlottedStory | null>(null);
   // flip is precomputed on hover so render never reads the ref; CSS positions the tooltip.
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0, flip: false });
+  const [selectedPos, setSelectedPos] = useState({ x: 0, y: 0, flip: false });
 
   const size = 700;
   const cx = size / 2;
@@ -28,55 +32,70 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
   const plotted = useMemo(() => plotStories(stories, cx, cy, outerR), [stories, cx, cy, outerR]);
   const criticalCount = useMemo(() => plotted.filter((p) => p.critical).length, [plotted]);
 
+  const computeTooltipPos = useCallback((clientX: number, clientY: number) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return { x: 0, y: 0, flip: false };
+    const rawX = clientX - rect.left + 16;
+    const rawY = clientY - rect.top - 12;
+    const maxX = rect.width - 320;
+    const x = Math.max(8, Math.min(rawX, maxX));
+    return { x, y: Math.max(8, rawY), flip: x > rect.width / 2 };
+  }, []);
+
   const handleDotHover = useCallback(
     (p: PlottedStory, e: React.MouseEvent) => {
       setHoveredStory(p);
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (rect) {
-        const rawX = e.clientX - rect.left + 16;
-        const rawY = e.clientY - rect.top - 12;
-        const maxX = rect.width - 320;
-        const x = Math.max(8, Math.min(rawX, maxX));
-        setTooltipPos({
-          x,
-          y: Math.max(8, rawY),
-          flip: x > rect.width / 2,
-        });
-      }
+      setTooltipPos(computeTooltipPos(e.clientX, e.clientY));
     },
-    []
+    [computeTooltipPos]
   );
 
   const handleDotLeave = useCallback(() => {
     setHoveredStory(null);
   }, []);
 
+  // Pin a briefing for the tapped/clicked blip. Snapshot the position so a pinned
+  // card stays put even as the cursor moves over other blips.
+  const selectStory = useCallback((p: PlottedStory, pos: { x: number; y: number; flip: boolean }) => {
+    setSelectedStory(p);
+    setSelectedPos(pos);
+    setHoveredStory(null);
+  }, []);
+
   const handleDotTap = useCallback(
     (p: PlottedStory, e: React.TouchEvent) => {
-      e.preventDefault();
       e.stopPropagation();
-      if (hoveredStory?.story.id === p.story.id) {
-        // Second tap on same story → navigate
-        if (isSafeUrl(p.story.url)) {
-          window.open(p.story.url, '_blank', 'noopener,noreferrer');
-        }
-        setHoveredStory(null);
-        return;
-      }
-      // First tap → show tooltip
-      setHoveredStory(p);
+      const touch = e.touches[0];
+      const pos = touch ? computeTooltipPos(touch.clientX, touch.clientY) : tooltipPos;
+      selectStory(p, pos);
     },
-    [hoveredStory]
+    [computeTooltipPos, selectStory, tooltipPos]
   );
 
   const handleDotClick = useCallback(
     (p: PlottedStory) => {
-      if (isSafeUrl(p.story.url)) {
-        window.open(p.story.url, '_blank', 'noopener,noreferrer');
-      }
+      // On desktop a hover precedes the click, so tooltipPos already sits on the blip.
+      selectStory(p, tooltipPos);
     },
-    []
+    [selectStory, tooltipPos]
   );
+
+  const closeSelected = useCallback(() => setSelectedStory(null), []);
+
+  const clearAll = useCallback(() => {
+    setHoveredStory(null);
+    setSelectedStory(null);
+  }, []);
+
+  // Escape dismisses the pinned briefing.
+  useEffect(() => {
+    if (!selectedStory) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedStory(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectedStory]);
 
   const sectorAngle = (2 * Math.PI) / TOPICS.length;
 
@@ -95,7 +114,7 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
   });
 
   return (
-    <div ref={containerRef} className="relative flex h-full items-center justify-center overflow-hidden bg-bg-base" onTouchStart={() => setHoveredStory(null)}>
+    <div ref={containerRef} className="relative flex h-full items-center justify-center overflow-hidden bg-bg-base" onTouchStart={clearAll}>
       <div className="radar-scanlines pointer-events-none absolute inset-0 z-[1]" />
       <div className="pointer-events-none absolute inset-0 z-[1]" style={{
         background: 'radial-gradient(circle at center, transparent 40%, rgba(10,10,12,0.5) 100%)',
@@ -312,9 +331,10 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
         })}
       </svg>
 
-      {hoveredStory && (
+      {/* Transient hover preview (desktop): follows the cursor, never interactive. */}
+      {hoveredStory && !selectedStory && (
         <div
-          className="radar-tooltip pointer-events-none absolute z-50 max-sm:left-2 max-sm:right-2 max-sm:top-10"
+          className="radar-tooltip pointer-events-none absolute z-40 hidden max-sm:right-2 max-sm:left-2 max-sm:top-10 sm:block"
           style={{
             '--tooltip-x': `${tooltipPos.x}px`,
             '--tooltip-y': `${tooltipPos.y}px`,
@@ -322,7 +342,38 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
           }}
         >
           <div className="max-sm:w-full">
-            <StoryTooltip story={hoveredStory.story} topicColor={hoveredStory.topicColor} className="radar-tooltip-inner" />
+            <StoryTooltip
+              story={hoveredStory.story}
+              topicColor={hoveredStory.topicColor}
+              variant="preview"
+              className="radar-tooltip-inner"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Pinned, interactive briefing: opening the source is an explicit action. */}
+      {selectedStory && (
+        <div
+          role="dialog"
+          aria-label="Story briefing"
+          className={`radar-tooltip radar-card-enter absolute z-50 max-sm:right-2 max-sm:left-2 ${
+            criticalCount > 0 ? 'max-sm:top-14' : 'max-sm:top-10'
+          }`}
+          style={{
+            '--tooltip-x': `${selectedPos.x}px`,
+            '--tooltip-y': `${selectedPos.y}px`,
+            '--tooltip-flip': selectedPos.flip ? '-100%' : '0px',
+          }}
+        >
+          <div className="max-sm:w-full">
+            <StoryTooltip
+              story={selectedStory.story}
+              topicColor={selectedStory.topicColor}
+              variant="pinned"
+              onClose={closeSelected}
+              className="radar-tooltip-inner"
+            />
           </div>
         </div>
       )}
