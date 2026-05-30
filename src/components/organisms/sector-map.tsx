@@ -15,6 +15,8 @@ interface SectorMapProps {
   readonly onSelectTopic: (topicId: string) => void;
 }
 
+const SECTOR_VISIBLE = 4;
+
 function Sector({
   topic,
   stories,
@@ -24,8 +26,8 @@ function Sector({
   readonly stories: readonly Story[];
   readonly onSelect: () => void;
 }) {
-  const topStories = stories.slice(0, 5);
-  const remaining = Math.max(0, stories.length - 5);
+  const topStories = stories.slice(0, SECTOR_VISIBLE);
+  const remaining = Math.max(0, stories.length - SECTOR_VISIBLE);
 
   return (
     <div
@@ -34,73 +36,69 @@ function Sector({
     >
       <button
         onClick={onSelect}
-        className="flex items-center justify-between border-b border-border px-2 py-1.5 text-left transition-colors hover:bg-bg-hover sm:px-3 sm:py-2"
+        className="flex items-baseline justify-between gap-2 border-b border-border px-3 py-2 text-left transition-colors hover:bg-bg-hover"
       >
-        <div className="flex items-center gap-2">
+        <span className="flex items-center gap-2 truncate">
           <TopicDot color={topic.color} />
-          <span className="text-[10px] font-bold tracking-wider text-text-bright sm:text-[11px]">
+          <span className="truncate text-[11px] font-bold tracking-wider text-text-bright">
             {topic.label}
           </span>
-        </div>
+        </span>
         <span
-          className="text-[14px] font-bold tabular-nums sm:text-[18px]"
+          className="shrink-0 text-[15px] font-bold leading-none tabular-nums sm:text-[16px]"
           style={{ color: topic.color }}
         >
           {stories.length}
         </span>
       </button>
 
-      <div className="flex-1 overflow-y-auto">
-        {topStories.map((story) => {
-          const score = formatScore(story.source, story.score);
-          return (
-            <div key={story.id} className="story-tooltip-wrap relative">
-              <a
-                href={isSafeUrl(story.url) ? story.url : '#'}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-start gap-2 border-b border-border/50 px-2 py-1.5 transition-colors hover:bg-bg-hover sm:px-3 sm:py-2"
-              >
-                <Badge
-                  sourceId={story.source}
-                  className="mt-0.5 hidden shrink-0 sm:inline"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[11px] leading-snug text-text-bright sm:text-[12px] sm:line-clamp-2 sm:whitespace-normal">
-                    {story.title}
-                  </p>
-                  {story.summary && (
-                    <p className="mt-0.5 hidden truncate text-[10px] leading-snug text-text-secondary sm:block">
-                      {story.summary}
-                    </p>
-                  )}
-                  <div className="mt-0.5 flex items-center gap-2 text-[10px] text-text-muted">
-                    <span>{relativeTime(story.publishedAt ?? story.fetchedAt)}</span>
-                    {score && (
-                      <span style={{ color: topic.color }}>{score}</span>
-                    )}
-                  </div>
-                </div>
-              </a>
-              <StoryTooltip story={story} topicColor={topic.color} className="story-tooltip" />
-            </div>
-          );
-        })}
-        {stories.length === 0 && (
-          <div className="px-3 py-6 text-center text-[10px] text-text-muted">
+      <div className="sector-feed flex-1 overflow-hidden">
+        {topStories.length === 0 ? (
+          <p className="px-3 py-6 text-center text-[10px] text-text-muted">
             No stories in this sector
-          </div>
+          </p>
+        ) : (
+          topStories.map((story) => {
+            const score = formatScore(story.source, story.score);
+            return (
+              <div key={story.id} className="story-tooltip-wrap relative">
+                <a
+                  href={isSafeUrl(story.url) ? story.url : '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-2 border-b border-border/50 px-3 py-2 transition-colors hover:bg-bg-hover"
+                >
+                  <Badge
+                    sourceId={story.source}
+                    className="mt-px hidden shrink-0 sm:inline"
+                  />
+                  <span className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="line-clamp-2 min-h-[2lh] text-[12px] font-medium leading-snug text-text-bright">
+                      {story.title}
+                    </span>
+                    <span className="flex items-center gap-2 text-[10px] text-text-muted">
+                      <span>{relativeTime(story.publishedAt ?? story.fetchedAt)}</span>
+                      {score && (
+                        <span className="tabular-nums" style={{ color: topic.color }}>
+                          {score}
+                        </span>
+                      )}
+                    </span>
+                  </span>
+                </a>
+                <StoryTooltip story={story} topicColor={topic.color} className="story-tooltip" />
+              </div>
+            );
+          })
         )}
       </div>
 
-      {remaining > 0 && (
-        <button
-          onClick={onSelect}
-          className="border-t border-border px-2 py-1 text-center text-[9px] text-text-muted transition-colors hover:bg-bg-hover hover:text-text-secondary sm:px-3 sm:py-1.5 sm:text-[10px]"
-        >
-          +{remaining} more
-        </button>
-      )}
+      <button
+        onClick={onSelect}
+        className="shrink-0 border-t border-border px-3 py-1.5 text-center text-[10px] text-text-muted transition-colors hover:bg-bg-hover hover:text-text-secondary"
+      >
+        {remaining > 0 ? `+${remaining} more` : 'View all'}
+      </button>
     </div>
   );
 }

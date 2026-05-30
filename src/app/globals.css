@@ -185,6 +185,13 @@ body {
   overflow: hidden;
 }
 
+/* Fade the last row at the cell boundary so a clipped story reads as
+   "more below" rather than an abrupt cut. The +N more / View all footer
+   carries the affordance. */
+.sector-feed {
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 14px), transparent);
+}
+
 /* ── Story Tooltip ── */
 .story-tooltip-wrap .story-tooltip {
   display: none;
