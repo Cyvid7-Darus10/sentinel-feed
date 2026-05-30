@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import type { Story } from '@/lib/types';
 import { TOPICS } from '@/lib/topics';
 import { CRITICAL_COLOR, CRITICAL_COLOR_LIGHT, ACCENT_GREEN } from '@/lib/config';
-import { isSafeUrl } from '@/lib/utils';
 import { plotStories, sectorPath, type PlottedStory } from '@/lib/radar-geometry';
 import { StoryTooltip } from '../molecules/story-tooltip';
 import { TopicDot } from '../atoms/topic-dot';
@@ -14,11 +13,27 @@ interface RadarViewProps {
   readonly onSelectTopic: (topicId: string) => void;
 }
 
+/** Briefing card width (300px in `.radar-tooltip-inner`) plus a right-edge gutter,
+ *  used to clamp the cursor-following position so the card never clips the edge. */
+const TOOLTIP_WIDTH_PX = 320;
+/** Fallback position for briefings opened without a cursor (touch / keyboard). */
+const PINNED_FALLBACK_POS = { x: 8, y: 8, flip: false } as const;
+
 export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  // The blip that opened the current briefing, so focus can return to it on close.
+  const triggerRef = useRef<SVGCircleElement | null>(null);
+  // A touch fires a follow-on synthetic click; this flag lets the click handler skip it.
+  const touchHandledRef = useRef(false);
+  // A blip can be in two states: hovered (transient desktop preview that follows
+  // the cursor) or selected (a pinned, interactive briefing). Selecting never
+  // navigates — opening the source is an explicit action inside the card.
   const [hoveredStory, setHoveredStory] = useState<PlottedStory | null>(null);
+  const [selectedStory, setSelectedStory] = useState<PlottedStory | null>(null);
   // flip is precomputed on hover so render never reads the ref; CSS positions the tooltip.
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0, flip: false });
+  const [selectedPos, setSelectedPos] = useState({ x: 0, y: 0, flip: false });
 
   const size = 700;
   const cx = size / 2;
@@ -28,55 +43,99 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
   const plotted = useMemo(() => plotStories(stories, cx, cy, outerR), [stories, cx, cy, outerR]);
   const criticalCount = useMemo(() => plotted.filter((p) => p.critical).length, [plotted]);
 
+  const computeTooltipPos = useCallback((clientX: number, clientY: number) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return { x: 0, y: 0, flip: false };
+    const rawX = clientX - rect.left + 16;
+    const rawY = clientY - rect.top - 12;
+    const maxX = rect.width - TOOLTIP_WIDTH_PX;
+    const x = Math.max(8, Math.min(rawX, maxX));
+    return { x, y: Math.max(8, rawY), flip: x > rect.width / 2 };
+  }, []);
+
   const handleDotHover = useCallback(
     (p: PlottedStory, e: React.MouseEvent) => {
+      // A mouse interaction means any pending touch is over; clear a possibly
+      // stranded flag (interrupted/scrolled tap) so this click isn't swallowed.
+      touchHandledRef.current = false;
       setHoveredStory(p);
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (rect) {
-        const rawX = e.clientX - rect.left + 16;
-        const rawY = e.clientY - rect.top - 12;
-        const maxX = rect.width - 320;
-        const x = Math.max(8, Math.min(rawX, maxX));
-        setTooltipPos({
-          x,
-          y: Math.max(8, rawY),
-          flip: x > rect.width / 2,
-        });
-      }
+      setTooltipPos(computeTooltipPos(e.clientX, e.clientY));
     },
-    []
+    [computeTooltipPos]
   );
 
   const handleDotLeave = useCallback(() => {
     setHoveredStory(null);
   }, []);
 
-  const handleDotTap = useCallback(
-    (p: PlottedStory, e: React.TouchEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (hoveredStory?.story.id === p.story.id) {
-        // Second tap on same story → navigate
-        if (isSafeUrl(p.story.url)) {
-          window.open(p.story.url, '_blank', 'noopener,noreferrer');
-        }
-        setHoveredStory(null);
-        return;
-      }
-      // First tap → show tooltip
-      setHoveredStory(p);
-    },
-    [hoveredStory]
-  );
-
-  const handleDotClick = useCallback(
-    (p: PlottedStory) => {
-      if (isSafeUrl(p.story.url)) {
-        window.open(p.story.url, '_blank', 'noopener,noreferrer');
-      }
+  // Pin a briefing for a blip. Snapshot the position so a pinned card stays put even
+  // as the cursor moves over other blips; remember the trigger for focus return.
+  const selectStory = useCallback(
+    (p: PlottedStory, pos: { x: number; y: number; flip: boolean }, trigger: SVGCircleElement) => {
+      triggerRef.current = trigger;
+      setSelectedStory(p);
+      setSelectedPos(pos);
+      setHoveredStory(null);
     },
     []
   );
+
+  const handleDotTap = useCallback(
+    (p: PlottedStory, e: React.TouchEvent<SVGCircleElement>) => {
+      e.stopPropagation();
+      touchHandledRef.current = true; // swallow the synthetic click that follows a tap
+      const touch = e.changedTouches[0];
+      const pos = touch ? computeTooltipPos(touch.clientX, touch.clientY) : PINNED_FALLBACK_POS;
+      selectStory(p, pos, e.currentTarget);
+    },
+    [computeTooltipPos, selectStory]
+  );
+
+  const handleDotClick = useCallback(
+    (p: PlottedStory, e: React.MouseEvent<SVGCircleElement>) => {
+      if (touchHandledRef.current) {
+        // This click was synthesized from a tap already handled by handleDotTap.
+        touchHandledRef.current = false;
+        return;
+      }
+      // On desktop a hover precedes the click, so tooltipPos already sits on the blip.
+      selectStory(p, tooltipPos, e.currentTarget);
+    },
+    [selectStory, tooltipPos]
+  );
+
+  const handleDotKeyDown = useCallback(
+    (p: PlottedStory, e: React.KeyboardEvent<SVGCircleElement>) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        selectStory(p, PINNED_FALLBACK_POS, e.currentTarget);
+      }
+    },
+    [selectStory]
+  );
+
+  const closeSelected = useCallback(() => {
+    setSelectedStory(null);
+    // Return focus to the blip that opened the briefing so keyboard users keep their place.
+    triggerRef.current?.focus();
+  }, []);
+
+  const clearAll = useCallback(() => {
+    setHoveredStory(null);
+    setSelectedStory(null);
+  }, []);
+
+  // Move focus into the briefing when it opens (so keyboard / screen-reader users land
+  // on its controls), and let Escape dismiss it.
+  useEffect(() => {
+    if (!selectedStory) return;
+    cardRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeSelected();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectedStory, closeSelected]);
 
   const sectorAngle = (2 * Math.PI) / TOPICS.length;
 
@@ -95,7 +154,7 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
   });
 
   return (
-    <div ref={containerRef} className="relative flex h-full items-center justify-center overflow-hidden bg-bg-base" onTouchStart={() => setHoveredStory(null)}>
+    <div ref={containerRef} className="relative flex h-full items-center justify-center overflow-hidden bg-bg-base" onTouchStart={clearAll}>
       <div className="radar-scanlines pointer-events-none absolute inset-0 z-[1]" />
       <div className="pointer-events-none absolute inset-0 z-[1]" style={{
         background: 'radial-gradient(circle at center, transparent 40%, rgba(10,10,12,0.5) 100%)',
@@ -245,9 +304,13 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
                 cy={p.y}
                 r={Math.max(p.dotR * 3, 18)}
                 fill="transparent"
-                className="cursor-pointer"
+                className="cursor-pointer focus-visible:outline-none"
+                role="button"
+                tabIndex={0}
+                aria-label={`${p.story.title} — open briefing`}
                 onTouchStart={(e) => handleDotTap(p, e)}
-                onClick={() => handleDotClick(p)}
+                onClick={(e) => handleDotClick(p, e)}
+                onKeyDown={(e) => handleDotKeyDown(p, e)}
                 onMouseEnter={(e) => handleDotHover(p, e)}
                 onMouseLeave={handleDotLeave}
               />
@@ -312,17 +375,57 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
         })}
       </svg>
 
-      {hoveredStory && (
+      {/* Transient hover preview (desktop only): follows the cursor, never interactive.
+          Touch devices go straight to the pinned briefing, so this stays hidden there. */}
+      {hoveredStory && !selectedStory && (
         <div
-          className="radar-tooltip pointer-events-none absolute z-50 max-sm:left-2 max-sm:right-2 max-sm:top-10"
+          className="radar-tooltip pointer-events-none absolute z-40 hidden sm:block"
           style={{
             '--tooltip-x': `${tooltipPos.x}px`,
             '--tooltip-y': `${tooltipPos.y}px`,
             '--tooltip-flip': tooltipPos.flip ? '-100%' : '0px',
           }}
         >
+          <div>
+            <StoryTooltip
+              story={hoveredStory.story}
+              topicColor={hoveredStory.topicColor}
+              variant="preview"
+              className="radar-tooltip-inner"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Pinned, interactive briefing: opening the source is an explicit action.
+          `key` makes the entrance animation re-fire when switching between blips. */}
+      {selectedStory && (
+        <div
+          key={selectedStory.story.id}
+          ref={cardRef}
+          role="dialog"
+          aria-label="Story briefing"
+          tabIndex={-1}
+          // Keep taps inside the card from bubbling to the container's clearAll,
+          // which would unmount the card before its buttons receive their click.
+          onTouchStart={(e) => e.stopPropagation()}
+          className={`radar-tooltip radar-card-enter absolute z-50 outline-none max-sm:right-2 max-sm:left-2 ${
+            criticalCount > 0 ? 'max-sm:top-14' : 'max-sm:top-10'
+          }`}
+          style={{
+            '--tooltip-x': `${selectedPos.x}px`,
+            '--tooltip-y': `${selectedPos.y}px`,
+            '--tooltip-flip': selectedPos.flip ? '-100%' : '0px',
+          }}
+        >
           <div className="max-sm:w-full">
-            <StoryTooltip story={hoveredStory.story} topicColor={hoveredStory.topicColor} className="radar-tooltip-inner" />
+            <StoryTooltip
+              story={selectedStory.story}
+              topicColor={selectedStory.topicColor}
+              variant="pinned"
+              onClose={closeSelected}
+              className="radar-tooltip-inner"
+            />
           </div>
         </div>
       )}

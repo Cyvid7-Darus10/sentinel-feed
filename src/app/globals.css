@@ -329,6 +329,54 @@ body {
   }
 }
 
+/* Explicit "open source" action inside a pinned briefing. The hover tint is a
+   faint wash of the blip's own topic color (currentColor), keeping the accent
+   restrained and on-theme. The ring uses the same color for keyboard focus. */
+.radar-open:hover {
+  background: color-mix(in oklab, currentColor 12%, transparent);
+}
+.radar-open:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px currentColor;
+}
+
+/* Pinned briefing entrance: a short rise + fade, eased out. */
+.radar-card-enter {
+  animation: radar-card-in 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes radar-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* On desktop the card is positioned via translateX(flip); preserve that so the
+   entrance never fights the flip transform, and honor reduced-motion. */
+@media (min-width: 640px) {
+  .radar-card-enter {
+    animation-name: radar-card-in-flip;
+  }
+  @keyframes radar-card-in-flip {
+    from {
+      opacity: 0;
+      transform: translateX(var(--tooltip-flip, 0)) translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(var(--tooltip-flip, 0)) translateY(0);
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .radar-card-enter {
+    animation: none;
+  }
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
