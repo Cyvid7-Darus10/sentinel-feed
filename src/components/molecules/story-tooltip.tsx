@@ -66,10 +66,11 @@ export function StoryTooltip({
         <div className="mt-3 flex items-stretch gap-2 border-t border-border pt-2.5">
           <a
             href={canOpen ? story.url : undefined}
-            target="_blank"
-            rel="noopener noreferrer"
+            target={canOpen ? '_blank' : undefined}
+            rel={canOpen ? 'noopener noreferrer' : undefined}
             onClick={canOpen ? onClose : undefined}
             aria-disabled={!canOpen}
+            tabIndex={canOpen ? undefined : -1}
             className={`radar-open group/open flex min-h-[44px] flex-1 items-center justify-center gap-1.5 border text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors focus-visible:outline-none focus-visible:ring-1 ${
               canOpen ? '' : 'pointer-events-none opacity-40'
             }`}
