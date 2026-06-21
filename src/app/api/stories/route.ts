@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readStoriesForDays } from '@/lib/storage';
 import type { SourceId } from '@/lib/types';
 import { VALID_SOURCE_SET } from '@/lib/sources';
+import { PUBLIC_GET_HEADERS } from '@/lib/config';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -30,13 +31,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       { stories: sorted, count: sorted.length },
-      {
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET',
-          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
-        },
-      }
+      { headers: PUBLIC_GET_HEADERS }
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal error';

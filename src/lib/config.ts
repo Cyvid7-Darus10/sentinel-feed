@@ -35,6 +35,13 @@ export const API = {
   sources: '/api/sources',
 } as const;
 
+/** CORS + edge-cache headers shared by the public read-only GET routes. */
+export const PUBLIC_GET_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET',
+  'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+} as const;
+
 /** Mac App Store listing for the Sentinel Bar companion app. */
 export const APP_STORE_URL =
   'https://apps.apple.com/app/sentinel-feed/id6761529644?mt=12';
