@@ -3,6 +3,8 @@ import { z } from 'zod';
 import type { Story } from './types';
 
 const MODEL = 'anthropic/claude-haiku-4.5';
+// Stories are analyzed in batches of this size to keep each prompt small and
+// reliable. All stories are processed — batches run concurrently.
 const MAX_BATCH_SIZE = 50;
 const MAX_SUMMARY_LENGTH = 120;
 const DESCRIPTION_PREVIEW_LENGTH = 120;
@@ -23,22 +25,39 @@ export async function enrichStories(
     return [...stories];
   }
 
-  // Cap batch size to control costs
-  const toEnrich = stories.slice(0, MAX_BATCH_SIZE);
-  const skipped = stories.slice(MAX_BATCH_SIZE);
+  // Process every story — split into batches so each prompt stays small, and
+  // run them concurrently. A failing batch falls back to its stories untouched
+  // rather than discarding the whole run.
+  const batches = chunk(stories, MAX_BATCH_SIZE);
+  const enrichedBatches = await Promise.all(batches.map(enrichBatch));
+  return enrichedBatches.flat();
+}
 
+async function enrichBatch(stories: readonly Story[]): Promise<Story[]> {
   try {
-    const results = await batchAnalyze(toEnrich);
-    const enriched = toEnrich.map((story, i) => ({
+    const results = await batchAnalyze(stories);
+    return stories.map((story, i) => ({
       ...story,
       relevant: results[i]?.relevant ?? true,
       summary: normalizeSummary(results[i]?.summary),
     }));
-    return [...enriched, ...skipped];
-  } catch {
-    // If AI fails, return stories without summaries — still useful
+  } catch (err) {
+    // If AI fails for this batch, keep its stories without summaries — still
+    // useful. Log it: these stories pass through unfiltered (relevant: true),
+    // so silent failures would quietly inflate the feed.
+    console.warn(
+      `[ai] Batch of ${stories.length} failed enrichment; passing through unfiltered: ${String(err)}`
+    );
     return [...stories];
   }
+}
+
+function chunk<T>(items: readonly T[], size: number): T[][] {
+  const batches: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    batches.push(items.slice(i, i + size));
+  }
+  return batches;
 }
 
 async function batchAnalyze(

@@ -46,3 +46,20 @@ export async function fetchAllSources(
 export function buildExistingUrlSet(stories: readonly Story[]): Set<string> {
   return new Set(stories.map((s) => normalizeUrl(s.url)));
 }
+
+/**
+ * Drop stories that share a normalized URL with an earlier story. Each source
+ * is deduped against already-stored URLs, but two sources can still surface the
+ * same link in one run; this collapses those to the first occurrence.
+ */
+export function dedupeStoriesByUrl(stories: readonly Story[]): Story[] {
+  const seen = new Set<string>();
+  const unique: Story[] = [];
+  for (const story of stories) {
+    const key = normalizeUrl(story.url);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(story);
+  }
+  return unique;
+}

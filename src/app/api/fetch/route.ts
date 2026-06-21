@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchAllSources, buildExistingUrlSet } from '@/lib/fetchers';
+import {
+  fetchAllSources,
+  buildExistingUrlSet,
+  dedupeStoriesByUrl,
+} from '@/lib/fetchers';
 import { enrichStories } from '@/lib/ai';
 import {
   readTodayStories,
@@ -7,7 +11,7 @@ import {
   readSourceHealth,
   writeSourceHealth,
 } from '@/lib/storage';
-import type { SourceHealth, Story } from '@/lib/types';
+import type { SourceHealth } from '@/lib/types';
 import { getSourceDisplayName } from '@/lib/sources';
 import { verifyCronAuth } from '@/lib/cron-auth';
 
@@ -28,10 +32,9 @@ export async function GET(request: NextRequest) {
 
     const results = await fetchAllSources(existingUrls);
 
-    const allNew: Story[] = [];
-    for (const result of results) {
-      allNew.push(...result.stories);
-    }
+    // Collapse cross-source duplicates (e.g. the same link on HN and Lobsters)
+    // before enrichment so each story is analyzed and stored once.
+    const allNew = dedupeStoriesByUrl(results.flatMap((r) => r.stories));
 
     const enriched = await enrichStories(allNew);
     const relevant = enriched.filter((s) => s.relevant);

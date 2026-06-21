@@ -29,7 +29,11 @@ vi.mock('../infoq', () => ({
   fetchInfoQ: vi.fn(),
 }));
 
-import { fetchAllSources, buildExistingUrlSet } from '../index';
+import {
+  fetchAllSources,
+  buildExistingUrlSet,
+  dedupeStoriesByUrl,
+} from '../index';
 import { fetchHackerNews } from '../hackernews';
 import { fetchGithubTrending } from '../github-trending';
 import { fetchLobsters } from '../lobsters';
@@ -202,5 +206,30 @@ describe('buildExistingUrlSet', () => {
   it('returns empty set for empty input', () => {
     const set = buildExistingUrlSet([]);
     expect(set.size).toBe(0);
+  });
+});
+
+describe('dedupeStoriesByUrl', () => {
+  it('keeps the first story when two sources share a URL', () => {
+    const hn = makeStory({ id: 'hn-1', source: 'hackernews', url: 'https://example.com/post' });
+    const lo = makeStory({ id: 'lo-1', source: 'lobsters', url: 'https://example.com/post/' });
+
+    const result = dedupeStoriesByUrl([hn, lo]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('hn-1');
+  });
+
+  it('preserves order and keeps distinct URLs', () => {
+    const a = makeStory({ id: 'a', url: 'https://example.com/a' });
+    const b = makeStory({ id: 'b', url: 'https://example.com/b' });
+
+    const result = dedupeStoriesByUrl([a, b]);
+
+    expect(result.map((s) => s.id)).toEqual(['a', 'b']);
+  });
+
+  it('returns empty array for empty input', () => {
+    expect(dedupeStoriesByUrl([])).toEqual([]);
   });
 });
