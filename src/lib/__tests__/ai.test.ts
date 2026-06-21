@@ -171,6 +171,7 @@ describe('enrichStories', () => {
         )
       )
       .mockRejectedValueOnce(new Error('NoObjectGeneratedError'));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     const result = await enrichStories(stories);
 
@@ -178,6 +179,11 @@ describe('enrichStories', () => {
     expect(result[0].summary).toBe('ok');
     expect(result[50].summary).toBeNull();
     expect(result[50].relevant).toBe(true); // untouched fallback default
+    // The failed batch is logged so unfiltered pass-throughs are observable.
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('failed enrichment')
+    );
+    warn.mockRestore();
   });
 
   it('includes the description in the AI prompt when available', async () => {
