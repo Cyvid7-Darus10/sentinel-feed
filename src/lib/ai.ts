@@ -45,9 +45,8 @@ async function enrichBatch(stories: readonly Story[]): Promise<Story[]> {
     // If AI fails for this batch, keep its stories without summaries — still
     // useful. Log it: these stories pass through unfiltered (relevant: true),
     // so silent failures would quietly inflate the feed.
-    const message = err instanceof Error ? err.message : String(err);
     console.warn(
-      `[ai] Batch of ${stories.length} failed enrichment; passing through unfiltered: ${message}`
+      `[ai] Batch of ${stories.length} failed enrichment; passing through unfiltered: ${String(err)}`
     );
     return [...stories];
   }
