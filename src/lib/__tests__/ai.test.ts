@@ -136,22 +136,48 @@ describe('enrichStories', () => {
     expect(result[0].summary).toHaveLength(120);
   });
 
-  it('passes stories beyond the batch cap through untouched', async () => {
-    // 51 stories: first 50 enriched, the 51st passes through with defaults.
+  it('analyzes every story by splitting into batches of 50', async () => {
+    // 51 stories: one full batch of 50 plus a second batch of 1 — none skip
+    // the relevance filter.
     const stories = Array.from({ length: 51 }, (_, i) =>
       makeStory({ id: `hn-${i}`, title: `Story ${i}` })
     );
-    mockGenerateText.mockResolvedValueOnce(
-      aiOutput(
-        Array.from({ length: 50 }, () => ({ relevant: true, summary: 'ok' }))
+    mockGenerateText
+      .mockResolvedValueOnce(
+        aiOutput(
+          Array.from({ length: 50 }, () => ({ relevant: true, summary: 'ok' }))
+        )
       )
+      .mockResolvedValueOnce(aiOutput([{ relevant: false, summary: null }]));
+
+    const result = await enrichStories(stories);
+
+    expect(mockGenerateText).toHaveBeenCalledTimes(2);
+    expect(result).toHaveLength(51);
+    expect(result[49].summary).toBe('ok');
+    // The 51st story was analyzed (and filtered out), not passed through.
+    expect(result[50].relevant).toBe(false);
+  });
+
+  it('keeps other batches when one batch fails', async () => {
+    const stories = Array.from({ length: 51 }, (_, i) =>
+      makeStory({ id: `hn-${i}`, title: `Story ${i}` })
     );
+    // First batch (50) succeeds; second batch (1) throws and falls back.
+    mockGenerateText
+      .mockResolvedValueOnce(
+        aiOutput(
+          Array.from({ length: 50 }, () => ({ relevant: true, summary: 'ok' }))
+        )
+      )
+      .mockRejectedValueOnce(new Error('NoObjectGeneratedError'));
 
     const result = await enrichStories(stories);
 
     expect(result).toHaveLength(51);
-    expect(result[49].summary).toBe('ok');
-    expect(result[50].summary).toBeNull(); // beyond the cap, untouched
+    expect(result[0].summary).toBe('ok');
+    expect(result[50].summary).toBeNull();
+    expect(result[50].relevant).toBe(true); // untouched fallback default
   });
 
   it('includes the description in the AI prompt when available', async () => {

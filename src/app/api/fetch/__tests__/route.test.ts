@@ -2,10 +2,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import type { Story, SourceHealth, FetchResult } from '@/lib/types';
 
-vi.mock('@/lib/fetchers', () => ({
-  fetchAllSources: vi.fn(),
-  buildExistingUrlSet: vi.fn(() => new Set<string>()),
-}));
+vi.mock('@/lib/fetchers', async () => {
+  const actual =
+    await vi.importActual<typeof import('@/lib/fetchers')>('@/lib/fetchers');
+  return {
+    fetchAllSources: vi.fn(),
+    buildExistingUrlSet: vi.fn(() => new Set<string>()),
+    // Use the real dedup so the route's cross-source behavior is exercised.
+    dedupeStoriesByUrl: actual.dedupeStoriesByUrl,
+  };
+});
 vi.mock('@/lib/ai', () => ({
   enrichStories: vi.fn(),
 }));
@@ -137,6 +143,30 @@ describe('GET /api/fetch', () => {
     expect(body.relevant).toBe(1);
     const written = mockWriteToday.mock.calls[0][0] as Story[];
     expect(written.map((s) => s.id)).toEqual(['hn-a']);
+  });
+
+  it('collapses the same URL surfaced by two sources before persisting', async () => {
+    const hn = makeStory({ id: 'hn-x', source: 'hackernews', url: 'https://example.com/dup' });
+    const lo = makeStory({ id: 'lo-x', source: 'lobsters', url: 'https://example.com/dup/' });
+
+    mockReadToday.mockResolvedValueOnce([]);
+    mockFetchAll.mockResolvedValueOnce([
+      { source: 'hackernews', stories: [hn], error: null },
+      { source: 'lobsters', stories: [lo], error: null },
+    ]);
+    // enrichStories receives the already-deduped list; echo it back as relevant.
+    mockEnrich.mockImplementationOnce(async (stories) =>
+      stories.map((s) => ({ ...s, relevant: true }))
+    );
+    mockReadHealth.mockResolvedValueOnce(emptyHealth);
+
+    const res = await GET(request('Bearer top-secret'));
+    const body = await res.json();
+
+    expect(body.fetched).toBe(1); // two raw stories collapsed to one
+    const written = mockWriteToday.mock.calls[0][0] as Story[];
+    expect(written).toHaveLength(1);
+    expect(written[0].id).toBe('hn-x'); // first occurrence wins
   });
 
   it('returns 500 when the pipeline throws', async () => {
