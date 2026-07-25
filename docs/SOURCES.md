@@ -1,8 +1,10 @@
-# Tech News Sources Research
+# Source survey
 
-> Research conducted April 1, 2026. Verified endpoints, auth requirements, and rate limits.
+Every tech news source considered on April 1, 2026, with the endpoint, auth requirement, and rate limit verified at the time. Endpoints rot, so check before relying on any of these.
 
-## Summary Matrix
+Seven of them shipped: Hacker News, GitHub Trending, Lobsters, Dev.to, daily.dev, Techmeme, and InfoQ. That list does not match the phase plan at the bottom of this file, which was written before the first fetcher existed. daily.dev in particular is marked SKIP below on the grounds that it had no public API, which turned out to be wrong: it has an unadvertised GraphQL endpoint, and that is what `src/lib/fetchers/dailydev.ts` uses.
+
+## Summary matrix
 
 | # | Source | Category | Access Method | Auth | Rate Limit | Signal | Freshness | Verdict |
 |---|--------|----------|--------------|------|------------|--------|-----------|---------|
@@ -40,15 +42,15 @@
 
 ---
 
-## A. General Tech News
+## A. General tech news
 
-### 1. Hacker News -- INCLUDE (Phase 1)
+### 1. Hacker News: INCLUDE (Phase 1)
 
 **Access:** REST API via Firebase
 **Base URL:** `https://hacker-news.firebaseio.com/v0`
 **Auth:** None
 **Rate Limit:** No documented limit (Firebase-hosted, very permissive)
-**Signal:** High -- community-curated, strong developer focus
+**Signal:** High. Community-curated, strong developer focus
 **Freshness:** Real-time, hundreds of new stories daily
 
 **Endpoints:**
@@ -70,13 +72,13 @@
 
 ---
 
-### 2. Lobsters -- INCLUDE (Phase 1)
+### 2. Lobsters: INCLUDE (Phase 1)
 
 **Access:** JSON endpoints (append `.json` to any page)
 **Base URL:** `https://lobste.rs`
 **Auth:** None
 **Rate Limit:** No documented limit, but be respectful (~1 request/minute)
-**Signal:** Very High -- invite-only community, strong CS/programming focus, lower noise than HN
+**Signal:** Very High. Invite-only community, strong CS/programming focus, lower noise than HN
 **Freshness:** Real-time, ~30-50 stories/day
 
 **Endpoints:**
@@ -97,13 +99,13 @@
 
 ---
 
-### 3. TechCrunch -- INCLUDE (Phase 1)
+### 3. TechCrunch: INCLUDE (Phase 1)
 
 **Access:** RSS feed
 **Feed URL:** `https://techcrunch.com/feed/`
 **Auth:** None
 **Rate Limit:** Standard RSS (unlimited reasonable polling)
-**Signal:** Medium -- broad tech news, includes startup funding noise
+**Signal:** Medium. Broad tech news, includes startup funding noise
 **Freshness:** ~10-15 articles/day
 
 **Category-specific feeds:**
@@ -114,20 +116,20 @@
 
 ---
 
-### 4. Ars Technica -- INCLUDE (Phase 1)
+### 4. Ars Technica: INCLUDE (Phase 1)
 
 **Access:** RSS feed
 **Feed URL:** `http://feeds.arstechnica.com/arstechnica/index/`
 **Auth:** None
 **Rate Limit:** Standard RSS
-**Signal:** High -- in-depth technical reporting, less noise than TechCrunch
+**Signal:** High. In-depth technical reporting, less noise than TechCrunch
 **Freshness:** ~10 articles/day
 
 **Strategy:** Fetch every 2 hours. Ars provides excerpts in RSS; full articles need scraping. Good for deep-dive technical stories.
 
 ---
 
-### 5. The Verge -- INCLUDE (Phase 2)
+### 5. The Verge: INCLUDE (Phase 2)
 
 **Access:** RSS feed
 **Feed URLs:**
@@ -136,31 +138,31 @@
 
 **Auth:** None
 **Rate Limit:** Standard RSS
-**Signal:** Medium -- consumer tech heavy, but covers major platform news
+**Signal:** Medium. Consumer tech heavy, but covers major platform news
 **Freshness:** ~20 articles/day
 
 **Verdict:** Phase 2 because content skews consumer; overlap with TechCrunch/Ars.
 
 ---
 
-### 6. Wired -- SKIP
+### 6. Wired: SKIP
 
 **Access:** RSS at `https://www.wired.com/feed/rss`
 **Auth:** None
-**Signal:** Medium -- long-form, magazine-style. Rarely breaking dev news.
+**Signal:** Medium. Long-form, magazine-style. Rarely breaking dev news.
 **Reason for skip:** Low freshness, consumer focus, high overlap with other general sources. Not worth the noise.
 
 ---
 
-## B. Developer-Specific
+## B. Developer-specific
 
-### 7. Dev.to (Forem) -- INCLUDE (Phase 1)
+### 7. Dev.to (Forem): INCLUDE (Phase 1)
 
 **Access:** REST API (Forem v1)
 **Base URL:** `https://dev.to/api`
 **Auth:** API key required (free, get from Settings > Extensions > API Keys)
 **Rate Limit:** 30 requests/minute (authenticated), 10/min (unauthenticated)
-**Signal:** Medium -- community posts vary in quality, but good for tutorials/announcements
+**Signal:** Medium. Community posts vary in quality, but good for tutorials/announcements
 **Freshness:** Real-time, hundreds of posts/day
 
 **Key Endpoints:**
@@ -185,16 +187,16 @@ User-Agent: SentinelFeed/1.0
 
 ---
 
-### 8. Hashnode -- SKIP
+### 8. Hashnode: SKIP
 
 **Access:** GraphQL API at `https://gql.hashnode.com`
 **Auth:** None for public queries
-**Signal:** Medium-Low -- individual blogs, inconsistent quality
+**Signal:** Medium-Low. Individual blogs, inconsistent quality
 **Reason for skip:** GraphQL complexity, no "trending" or "top" endpoint, content overlaps with Dev.to. Hashnode content already appears in daily.dev.
 
 ---
 
-### 9. daily.dev -- SKIP
+### 9. daily.dev: SKIP
 
 **Access:** No public API
 **Signal:** High (it aggregates and curates)
@@ -202,12 +204,12 @@ User-Agent: SentinelFeed/1.0
 
 ---
 
-### 10. InfoQ -- INCLUDE (Phase 2)
+### 10. InfoQ: INCLUDE (Phase 2)
 
 **Access:** RSS feed
 **Feed URL:** `https://feed.infoq.com/`
 **Auth:** None
-**Signal:** High -- enterprise-grade technical content, architecture deep dives
+**Signal:** High. Enterprise-grade technical content, architecture deep dives
 **Freshness:** ~5 articles/day
 
 **Topic feeds:**
@@ -221,17 +223,17 @@ User-Agent: SentinelFeed/1.0
 
 ---
 
-### 11. DZone -- SKIP
+### 11. DZone: SKIP
 
 **Access:** RSS at `https://feeds.dzone.com/home`
-**Signal:** Medium -- article quality varies widely, lots of sponsored content
+**Signal:** Medium. Article quality varies widely, lots of sponsored content
 **Reason for skip:** Lower signal than InfoQ, significant sponsored/promotional content noise.
 
 ---
 
-## C. Code & Repos
+## C. Code and repos
 
-### 12. GitHub Trending -- INCLUDE (Phase 1)
+### 12. GitHub Trending: INCLUDE (Phase 1)
 
 Already documented in RESEARCH.md. Scrape HTML.
 
@@ -241,13 +243,13 @@ Already documented in RESEARCH.md. Scrape HTML.
 
 ---
 
-### 13. GitHub Releases (Atom Feeds) -- INCLUDE (Phase 1)
+### 13. GitHub Releases (Atom Feeds): INCLUDE (Phase 1)
 
-**Access:** Atom feeds (XML) -- no API auth needed
+**Access:** Atom feeds (XML). No API auth needed
 **Format:** `https://github.com/{owner}/{repo}/releases.atom`
 **Auth:** None for public repos
 **Rate Limit:** Standard GitHub rate limits for web (generous for Atom)
-**Signal:** Very High -- authoritative release information
+**Signal:** Very High. Authoritative release information
 **Freshness:** Per-release
 
 **Key repos to monitor:**
@@ -287,13 +289,13 @@ GET https://api.github.com/repos/{owner}/{repo}/releases/latest
 
 ---
 
-### 14. Product Hunt -- INCLUDE (Phase 2)
+### 14. Product Hunt: INCLUDE (Phase 2)
 
 **Access:** GraphQL API
 **Endpoint:** `https://api.producthunt.com/v2/api/graphql`
 **Auth:** OAuth2 required. Get developer token from `https://api.producthunt.com/v2/oauth/applications`
 **Rate Limit:** Undocumented but reportedly generous
-**Signal:** Medium -- tech product launches, some noise from non-dev products
+**Signal:** Medium. Tech product launches, some noise from non-dev products
 **Freshness:** Daily (batch of launches each day)
 
 **Key query:**
@@ -314,19 +316,19 @@ query {
 }
 ```
 
-**Verdict:** Phase 2 -- requires OAuth setup, content is hit-or-miss for pure dev news. Good for discovering new dev tools.
+**Verdict:** Phase 2. Requires OAuth setup, content is hit-or-miss for pure dev news. Good for discovering new dev tools.
 
 ---
 
-## D. AI/ML Specific
+## D. AI and ML
 
-### 15. Anthropic Blog -- INCLUDE (Phase 1)
+### 15. Anthropic Blog: INCLUDE (Phase 1)
 
 **Access:** No official RSS feed found. Use RSSHub or scrape.
 **Blog URL:** `https://www.anthropic.com/news`
 **Research URL:** `https://www.anthropic.com/research`
 **Auth:** None
-**Signal:** Very High -- primary source for Claude updates
+**Signal:** Very High. Primary source for Claude updates
 **Freshness:** ~2 posts/week
 
 **Options:**
@@ -341,33 +343,33 @@ query {
 
 ---
 
-### 16. OpenAI Blog -- INCLUDE (Phase 1)
+### 16. OpenAI Blog: INCLUDE (Phase 1)
 
 **Access:** RSS feed
 **Feed URL:** `https://openai.com/news/rss.xml`
 **Engineering feed:** `https://openai.com/news/engineering/rss.xml`
 **Auth:** None
-**Signal:** Very High -- primary source for GPT/API updates
+**Signal:** Very High. Primary source for GPT/API updates
 **Freshness:** ~3 posts/week
 
 **Strategy:** Poll RSS every 6 hours. Engineering feed has higher signal for developers.
 
 ---
 
-### 17. Google AI Blog -- INCLUDE (Phase 1)
+### 17. Google AI Blog: INCLUDE (Phase 1)
 
 **Access:** RSS feed
 **Feed URL:** `https://blog.research.google/feeds/posts/default?alt=rss`
 **Also:** `http://googleresearch.blogspot.com/atom.xml`
 **Auth:** None
-**Signal:** High -- Gemini updates, research breakthroughs
+**Signal:** High. Gemini updates, research breakthroughs
 **Freshness:** ~3 posts/week
 
 **Strategy:** Poll RSS every 6 hours.
 
 ---
 
-### 18. Hugging Face Daily Papers -- INCLUDE (Phase 1)
+### 18. Hugging Face Daily Papers: INCLUDE (Phase 1)
 
 **Access:** REST API + web page
 **Trending papers:** `https://huggingface.co/papers`
@@ -375,14 +377,14 @@ query {
 **Paper content:** `https://huggingface.co/papers/{PAPER_ID}.md`
 **Auth:** None
 **Rate Limit:** Undocumented, reasonable use expected
-**Signal:** Very High -- community-curated AI research, upvote system
+**Signal:** Very High. Community-curated AI research, upvote system
 **Freshness:** Daily (new papers every day)
 
 **Strategy:** Fetch `/api/daily_papers` once daily. Get paper metadata (title, authors, upvotes, abstract). High signal for AI/ML developments.
 
 ---
 
-### 19. Papers with Code -- INCLUDE (Phase 2)
+### 19. Papers with Code: INCLUDE (Phase 2)
 
 **Access:** REST API
 **Base URL:** `https://paperswithcode.com/api/v1/`
@@ -390,7 +392,7 @@ query {
 **Python client:** `pip install paperswithcode-client`
 **Auth:** None for reads, API token for writes
 **Rate Limit:** Undocumented
-**Signal:** High -- papers with actual implementations
+**Signal:** High. Papers with actual implementations
 **Freshness:** Daily
 
 **Key endpoints:**
@@ -404,13 +406,13 @@ query {
 
 ---
 
-### 20. arXiv -- INCLUDE (Phase 2)
+### 20. arXiv: INCLUDE (Phase 2)
 
 **Access:** REST API
 **Base URL:** `http://export.arxiv.org/api/query`
 **Auth:** None
 **Rate Limit:** 3 requests/second (enforced, will throttle)
-**Signal:** Research-grade -- raw papers, no curation
+**Signal:** Research-grade. Raw papers, no curation
 **Freshness:** Daily submissions
 
 **Example query:**
@@ -424,9 +426,9 @@ GET http://export.arxiv.org/api/query?search_query=cat:cs.AI&sortBy=submittedDat
 
 ---
 
-## E. Framework/Platform Changelogs
+## E. Framework and platform changelogs
 
-### 21. GitHub Releases Atom Feeds -- INCLUDE (Phase 1)
+### 21. GitHub Releases Atom Feeds: INCLUDE (Phase 1)
 
 See Section C.13 above for complete list. All follow the pattern:
 ```
@@ -437,7 +439,7 @@ No auth, no rate limit concerns for Atom feeds. Parse with standard XML parser.
 
 ---
 
-### 22. Python Releases -- INCLUDE (Phase 1)
+### 22. Python Releases: INCLUDE (Phase 1)
 
 **Access:** RSS feed
 **Feed URL:** `https://blog.python.org/feeds/posts/default?alt=rss`
@@ -447,7 +449,7 @@ No auth, no rate limit concerns for Atom feeds. Parse with standard XML parser.
 
 ---
 
-### 23. Vercel Changelog -- INCLUDE (Phase 2)
+### 23. Vercel Changelog: INCLUDE (Phase 2)
 
 **Access:** No official RSS feed. Scrape or use RSSHub.
 **URL:** `https://vercel.com/changelog`
@@ -463,9 +465,9 @@ No auth, no rate limit concerns for Atom feeds. Parse with standard XML parser.
 
 ---
 
-## F. Social/Community
+## F. Social and community
 
-### 24. Reddit -- INCLUDE (Phase 2)
+### 24. Reddit: INCLUDE (Phase 2)
 
 **Access:** REST API (OAuth2) or RSS feeds
 **Auth:** OAuth2 required for API. Free tier available for non-commercial use.
@@ -493,11 +495,11 @@ GET https://oauth.reddit.com/r/{subreddit}/hot?limit=25
 Authorization: Bearer {access_token}
 ```
 
-**Verdict:** Phase 2. RSS feeds work without auth but have limited data. API needs OAuth app registration. Reddit has gotten hostile to API consumers -- RSS is safer.
+**Verdict:** Phase 2. RSS feeds work without auth but have limited data. API needs OAuth app registration. Reddit has gotten hostile to API consumers. RSS is safer.
 
 ---
 
-### 25. X/Twitter -- SKIP (for now)
+### 25. X/Twitter: SKIP (for now)
 
 **Access:** API v2
 **Auth:** OAuth2, requires approved developer account
@@ -507,23 +509,23 @@ Authorization: Bearer {access_token}
 
 ---
 
-### 26. Mastodon -- SKIP
+### 26. Mastodon: SKIP
 
 **Access:** REST API, no auth for public timelines
-**Signal:** Low -- fragmented, hard to find signal
+**Signal:** Low. Fragmented, hard to find signal
 **Reason for skip:** Distributed nature makes aggregation complex. Tech community is split across many instances. Low ROI.
 
 ---
 
-## G. Newsletters/Curated
+## G. Newsletters and curated digests
 
-### 27. TLDR Newsletter -- INCLUDE (Phase 2)
+### 27. TLDR Newsletter: INCLUDE (Phase 2)
 
 **Access:** Community RSS feed
 **Feed URL:** `https://tldr.tech/tech/rss` (unofficial, via github.com/Bullrich/tldr-rss)
 **Also:** Archives at `https://tldr.tech/tech/archives`
 **Auth:** None
-**Signal:** High -- human-curated daily digest
+**Signal:** High. Human-curated daily digest
 **Freshness:** Daily (weekdays)
 
 **Sub-newsletters:**
@@ -535,12 +537,12 @@ Authorization: Bearer {access_token}
 
 ---
 
-### 28. JavaScript Weekly (Cooperpress) -- INCLUDE (Phase 2)
+### 28. JavaScript Weekly (Cooperpress): INCLUDE (Phase 2)
 
 **Access:** RSS feed
 **Feed URL:** `https://javascriptweekly.com/rss`
 **Auth:** None
-**Signal:** Very High -- expertly curated, industry standard
+**Signal:** Very High. Expertly curated, industry standard
 **Freshness:** Weekly (Fridays)
 
 **Related Cooperpress newsletters:**
@@ -551,7 +553,7 @@ Authorization: Bearer {access_token}
 
 ---
 
-### 29. Python Weekly -- INCLUDE (Phase 2)
+### 29. Python Weekly: INCLUDE (Phase 2)
 
 **Access:** RSS feed
 **Feed URL:** `https://us2.campaign-archive.com/feed?u=e2e180baf855ac797ef407fc7&id=9e26887fc5`
@@ -561,7 +563,7 @@ Authorization: Bearer {access_token}
 
 ---
 
-### 30. Engineering Blogs -- INCLUDE (Phase 2)
+### 30. Engineering Blogs: INCLUDE (Phase 2)
 
 High-signal RSS feeds from major tech companies:
 
@@ -592,43 +594,43 @@ High-signal RSS feeds from major tech companies:
 
 ---
 
-## Phase Implementation Plan
+## Phase plan (as originally drafted)
 
-### Phase 1 -- Core Sources (MVP, ~12 sources)
+### Phase 1: core sources
 
 These require no auth or only free API keys, have high signal, and are straightforward to implement:
 
-1. **Hacker News** -- Firebase REST API, top 30 stories
-2. **Lobsters** -- JSON endpoints, hottest stories
-3. **GitHub Trending** -- Scrape HTML (already planned)
-4. **GitHub Releases** -- Atom feeds for 18 key repos
-5. **Dev.to** -- REST API, top articles by tag
-6. **TechCrunch** -- RSS feed
-7. **Ars Technica** -- RSS feed
-8. **OpenAI Blog** -- RSS feed
-9. **Google AI Blog** -- RSS feed
-10. **Anthropic Blog** -- Scrape news page
-11. **Hugging Face Papers** -- REST API, daily papers
-12. **Python blog** -- RSS feed
+1. **Hacker News**, Firebase REST API, top 30 stories
+2. **Lobsters**, JSON endpoints, hottest stories
+3. **GitHub Trending**, scrape HTML (already planned)
+4. **GitHub Releases**, Atom feeds for 18 key repos
+5. **Dev.to**, REST API, top articles by tag
+6. **TechCrunch**, RSS feed
+7. **Ars Technica**, RSS feed
+8. **OpenAI Blog**, RSS feed
+9. **Google AI Blog**, RSS feed
+10. **Anthropic Blog**, scrape news page
+11. **Hugging Face Papers**, REST API, daily papers
+12. **Python blog**, RSS feed
 
 **Estimated implementation:** ~200 lines of fetcher code total. All fetchable with standard `fetch()` + XML parser + cheerio.
 
-### Phase 2 -- Extended Sources (~10 additional)
+### Phase 2: extended sources
 
 These require auth, scraping, or have lower priority:
 
-1. **Reddit** -- RSS feeds for key subreddits (no auth needed for RSS)
-2. **Product Hunt** -- GraphQL API (needs OAuth token)
-3. **The Verge** -- RSS feed
-4. **InfoQ** -- RSS feed
-5. **Papers with Code** -- REST API
-6. **arXiv** -- REST API (needs filtering)
-7. **Vercel Changelog** -- Scrape or RSSHub
-8. **TLDR Newsletter** -- Community RSS or scrape
-9. **JavaScript Weekly** -- RSS feed
-10. **Engineering Blogs** -- RSS feeds (batch of ~10)
+1. **Reddit**, RSS feeds for key subreddits (no auth needed for RSS)
+2. **Product Hunt**, GraphQL API (needs OAuth token)
+3. **The Verge**, RSS feed
+4. **InfoQ**, RSS feed
+5. **Papers with Code**, REST API
+6. **arXiv**, REST API (needs filtering)
+7. **Vercel Changelog**, scrape or RSSHub
+8. **TLDR Newsletter**, community RSS or scrape
+9. **JavaScript Weekly**, RSS feed
+10. **Engineering Blogs**, RSS feeds (batch of ~10)
 
-### Skipped Sources
+### Skipped
 
 | Source | Reason |
 |--------|--------|
@@ -641,13 +643,13 @@ These require auth, scraping, or have lower priority:
 
 ---
 
-## Technical Notes
+## Implementation notes
 
-### RSS/Atom Parsing
+### RSS and Atom parsing
 
 All RSS and Atom feeds can be parsed with a single lightweight XML parser. Recommended: use the built-in `DOMParser` in edge runtime or a library like `fast-xml-parser` (~30KB).
 
-### Unified Fetch Pattern
+### Unified output shape
 
 All sources converge to a common output:
 ```typescript
@@ -665,7 +667,7 @@ interface FeedItem {
 }
 ```
 
-### Fetch Schedule
+### Fetch schedule
 
 | Frequency | Sources |
 |-----------|---------|
@@ -676,6 +678,6 @@ interface FeedItem {
 | Daily | GitHub Trending |
 | Weekly | Newsletter feeds (JS Weekly, Python Weekly, etc.) |
 
-### Dedup Strategy
+### Dedup
 
 Dedup by normalized URL. Many stories appear across HN, Lobsters, Reddit, and Dev.to simultaneously. Keep the version with the highest score/engagement.

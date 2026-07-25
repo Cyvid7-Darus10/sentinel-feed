@@ -14,7 +14,7 @@ export function verifyCronAuth(request: NextRequest, label = 'cron'): NextRespon
   }
 
   if (authHeader !== `Bearer ${cronSecret}`) {
-    console.warn(`[${label}] Auth failed — header present:`, !!authHeader);
+    console.warn(`[${label}] Auth failed, header present:`, !!authHeader);
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

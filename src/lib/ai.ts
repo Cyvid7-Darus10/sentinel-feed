@@ -3,8 +3,8 @@ import { z } from 'zod';
 import type { Story } from './types';
 
 const MODEL = 'anthropic/claude-haiku-4.5';
-// Stories are analyzed in batches of this size to keep each prompt small and
-// reliable. All stories are processed — batches run concurrently.
+// Batch size, not a cap. Everything gets analyzed; this only bounds how many
+// stories ride in a single prompt.
 const MAX_BATCH_SIZE = 50;
 const MAX_SUMMARY_LENGTH = 120;
 const DESCRIPTION_PREVIEW_LENGTH = 120;
@@ -25,9 +25,8 @@ export async function enrichStories(
     return [...stories];
   }
 
-  // Process every story — split into batches so each prompt stays small, and
-  // run them concurrently. A failing batch falls back to its stories untouched
-  // rather than discarding the whole run.
+  // Every story gets analyzed. Splitting into fixed-size batches keeps each prompt
+  // small enough to stay reliable, and the batches run concurrently.
   const batches = chunk(stories, MAX_BATCH_SIZE);
   const enrichedBatches = await Promise.all(batches.map(enrichBatch));
   return enrichedBatches.flat();
@@ -42,9 +41,9 @@ async function enrichBatch(stories: readonly Story[]): Promise<Story[]> {
       summary: normalizeSummary(results[i]?.summary),
     }));
   } catch (err) {
-    // If AI fails for this batch, keep its stories without summaries — still
-    // useful. Log it: these stories pass through unfiltered (relevant: true),
-    // so silent failures would quietly inflate the feed.
+    // A failed batch costs summaries, not stories. Worth logging loudly though:
+    // these pass through with relevant: true, so a silent failure quietly inflates
+    // the feed with whatever the filter would have dropped.
     console.warn(
       `[ai] Batch of ${stories.length} failed enrichment; passing through unfiltered: ${String(err)}`
     );
@@ -68,7 +67,7 @@ async function batchAnalyze(
       (s, i) =>
         `${i + 1}. "${s.title}"${
           s.description
-            ? ` — ${s.description.slice(0, DESCRIPTION_PREVIEW_LENGTH)}`
+            ? `: ${s.description.slice(0, DESCRIPTION_PREVIEW_LENGTH)}`
             : ''
         }`
     )
@@ -87,7 +86,8 @@ Return exactly one result per story, in the same order as the input.`,
     temperature: 0,
   });
 
-  // Trust only a 1:1 mapping; otherwise keep everything.
+  // A short or long array means the results no longer line up with the input, and
+  // zipping them anyway would attach summaries to the wrong stories. Bail to neutral.
   if (output.length !== stories.length) {
     console.warn(
       `[ai] Expected ${stories.length} results, got ${output.length}; using neutral defaults`

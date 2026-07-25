@@ -10,50 +10,47 @@ export default function AccessibilityPage() {
       <h1 className="mb-8 text-[20px] font-bold text-text-bright">Accessibility</h1>
       <p className="mb-4 text-text-muted">Last updated: April 2, 2026</p>
 
-      <Section title="Our Commitment">
+      <Section title="Where we are">
         <p>
-          Sentinel Bar is built with SwiftUI, which provides built-in support for macOS
-          accessibility features. We are committed to making the app usable by everyone.
+          Sentinel Bar is built with SwiftUI, so it inherits most of what macOS provides for
+          accessibility. Below is what that covers today. If something on this page does not
+          match your experience of the app, that is a bug and we would like to hear about it.
         </p>
       </Section>
 
-      <Section title="Supported Features">
+      <Section title="What works">
         <ul className="mt-2 list-inside list-disc space-y-2 text-text-secondary">
           <li>
-            <strong className="text-text-bright">VoiceOver</strong> — All story titles, summaries,
-            source badges, scores, and navigation elements are accessible to the macOS screen reader.
-            Standard SwiftUI components ensure proper labeling and focus order.
+            VoiceOver reads every story title, summary, source badge, score, and navigation
+            control. Labeling and focus order come from standard SwiftUI components.
           </li>
           <li>
-            <strong className="text-text-bright">Voice Control</strong> — All interactive elements
-            (story rows, tabs, buttons) can be activated via macOS Voice Control.
+            Voice Control can activate every interactive element, including story rows, tabs,
+            and buttons.
           </li>
           <li>
-            <strong className="text-text-bright">Dark Interface</strong> — The app uses a dark theme
-            exclusively, reducing eye strain in low-light environments.
+            Tab and the standard macOS keyboard shortcuts move through the popover and
+            everything inside it.
           </li>
           <li>
-            <strong className="text-text-bright">Sufficient Contrast</strong> — Text uses high-contrast
-            color pairings: bright white (#EAEAF0) on near-black (#0A0A0C) backgrounds, exceeding
-            WCAG AA contrast ratios.
+            Text runs bright white (#EAEAF0) on near-black (#0A0A0C), which clears WCAG AA
+            contrast ratios.
           </li>
           <li>
-            <strong className="text-text-bright">Reduced Motion</strong> — The native feed tab uses
-            no animations. The embedded dashboard tab contains optional animations (radar sweep)
-            that respect the system Reduce Motion preference.
+            The native feed tab has no animation at all. The embedded dashboard tab does have
+            some, including the radar sweep, and those honor the system Reduce Motion setting.
           </li>
           <li>
-            <strong className="text-text-bright">Keyboard Navigation</strong> — The popover and all
-            interactive elements are navigable via Tab key and standard macOS keyboard shortcuts.
+            The interface is dark only. There is no light theme.
           </li>
         </ul>
       </Section>
 
-      <Section title="Color Coding">
+      <Section title="Color">
         <p>
-          Topic categories and source badges use color as a visual aid, but every colored element
-          also includes a text label (e.g., &quot;HN&quot;, &quot;GH&quot;, &quot;SECURITY&quot;),
-          ensuring information is not conveyed by color alone.
+          Topic categories and source badges are color-coded, but color is never the only signal.
+          Every colored element also carries a text label, such as &quot;HN&quot;, &quot;GH&quot;,
+          or &quot;SECURITY&quot;.
         </p>
       </Section>
 

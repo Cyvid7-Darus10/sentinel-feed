@@ -104,7 +104,7 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
       {rateLimited && (
         <div className="flex items-center gap-3 border-b border-danger/30 bg-danger/5 px-4 py-2">
           <span className="text-[12px] text-danger">
-            Too many requests — auto-refresh paused. Try again in a moment.
+            Too many requests. Auto-refresh is paused; try again in a moment.
           </span>
         </div>
       )}
@@ -135,7 +135,7 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
       )}
 
       <footer className="flex items-center justify-between border-t border-border bg-bg-primary px-5 py-1.5 text-[10px] text-text-muted">
-        <span>{displayStories.length} of {stories.length} stories — auto-refresh 60s</span>
+        <span>{displayStories.length} of {stories.length} stories, auto-refresh 60s</span>
         <nav className="flex gap-3" aria-label="Legal">
           <a href="/privacy" className="transition-colors hover:text-text-secondary">Privacy</a>
           <a href="/terms" className="transition-colors hover:text-text-secondary">Terms</a>

@@ -1,36 +1,29 @@
-# Security Policy
+# Security
 
-## Reporting a Vulnerability
+## Reporting a vulnerability
 
-If you discover a security vulnerability in Sentinel Feed, please report it responsibly.
+Email **security@pastelero.ph**. Please do not open a public issue.
 
-**Do not open a public issue.**
+Include what the vulnerability is, how to reproduce it, and what an attacker could do with it. A suggested fix is welcome but not expected.
 
-Instead, email **security@pastelero.ph** with:
+You will get a reply within 48 hours. Nothing gets disclosed publicly until there is a fix, and you get credit unless you would rather not.
 
-- Description of the vulnerability
-- Steps to reproduce
-- Potential impact
-- Suggested fix (if any)
+## In scope
 
-You will receive a response within 48 hours. We will work with you to understand and address the issue before any public disclosure.
+- The web app at `sentinel-feed.pastelero.ph`
+- The Sentinel Bar macOS app
+- The public read endpoints, `/api/stories` and `/api/sources`
+- This codebase
 
-## Scope
+## Out of scope
 
-This policy covers:
-
-- The Sentinel Feed web application (`sentinel-feed.pastelero.ph`)
-- The Sentinel Bar macOS application
-- The public API endpoints (`/api/stories`, `/api/sources`)
-- The open-source codebase
-
-## Out of Scope
-
-- Third-party services (Vercel, GitHub, Hacker News, etc.)
-- Denial of service attacks
+- Third-party services we only read from: Vercel, GitHub, Hacker News, and the rest of the sources
+- Denial of service
 - Social engineering
 
-## Supported Versions
+The app has no accounts, no user data, and no writes from the browser, so reports about session handling or authorization between users do not apply here. Reports about the cron routes accepting unauthenticated writes very much do.
+
+## Supported versions
 
 | Version | Supported |
 |---------|-----------|

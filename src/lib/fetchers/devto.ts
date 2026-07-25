@@ -21,7 +21,7 @@ interface DevtoArticle {
 }
 
 export async function fetchDevto(): Promise<Story[]> {
-  // top=1 means "top articles from the last 1 day"
+  // Forem reads top as a day count, not a rank, so top=1 is "best of the last 24h".
   const res = await fetch(`${DEVTO_API}?top=1&per_page=30`, {
     headers: { Accept: 'application/json' },
     signal: AbortSignal.timeout(FETCHER_TIMEOUT_MS),

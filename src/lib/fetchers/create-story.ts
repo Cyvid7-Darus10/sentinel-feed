@@ -11,7 +11,8 @@ interface StoryInput {
   readonly publishedAt?: string | null;
 }
 
-/** Build a Story object with sensible defaults. */
+/** Fills in the fields every fetcher would otherwise repeat: empty tags, null score,
+ *  `relevant: true` until AI says otherwise, and fetchedAt stamped now. */
 export function createStory(source: SourceId, input: StoryInput): Story {
   return {
     id: input.id,

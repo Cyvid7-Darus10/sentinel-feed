@@ -9,9 +9,9 @@ interface StoryTooltipProps {
   readonly topicColor: string;
   readonly className?: string;
   /**
-   * `bare` (default) renders the briefing only — used by the sector map.
-   * `preview` adds a non-interactive hint (desktop hover on the radar).
-   * `pinned` adds the interactive action row so navigation is explicit.
+   * `bare` (default) renders the briefing alone, which is what the sector map uses.
+   * `preview` adds a non-interactive hint, for desktop hover on the radar.
+   * `pinned` adds the action row, so opening the source is a deliberate click.
    */
   readonly variant?: StoryTooltipVariant;
   readonly onClose?: () => void;

@@ -38,7 +38,8 @@ function parseRss(
   const $ = cheerio.load(xml, { xml: true });
   const stories: Story[] = [];
 
-  // Handle both RSS 2.0 (<item>) and Atom (<entry>)
+  // RSS 2.0 nests entries under <item>, Atom under <entry>. Feeds never mix the two,
+  // so whichever selector matches first wins.
   const items = $('item').length > 0 ? $('item') : $('entry');
 
   items.each((i, el) => {

@@ -1,424 +1,129 @@
-# Sentinel Feed — Branding & Design System
+# Design notes
 
-> Visual identity and design language for the Sentinel Feed intelligence dashboard.
-> Inherits the Palantir Gotham aesthetic from [Claude Mission Control](https://github.com/Cyvid7-Darus10/claude-mission-control).
+The look borrows from Palantir Gotham by way of [Claude Mission Control](https://github.com/Cyvid7-Darus10/claude-mission-control): near-black backgrounds, neutral grays with no blue tint, monospace everywhere, and nothing rounded. It reads as an instrument panel rather than a news site, which is the point. The stories are ranked signal, not articles.
 
-## Brand Identity
+Everything here lives in `src/app/globals.css`. Tailwind 4 has no config file, so the tokens are CSS custom properties re-exported through `@theme inline`, which is what makes `bg-bg-panel` and `text-text-muted` work as utilities.
 
-### Name
+## Name
 
-**Sentinel Feed** — a sentinel watches, monitors, and reports. The name communicates:
-- **Surveillance** — always watching your tech sources
-- **Intelligence** — filtered, summarized, relevant
-- **Duty** — it runs automatically, you just consume the output
+A sentinel watches and reports, and does it without being asked. The app runs on a cron whether or not anyone opens the tab, which is roughly the whole idea.
 
-### Tagline
+Logo mark, matching Mission Control's pattern:
 
-> **60 minutes of tech news. Distilled to 5.**
-
-### Logo Mark
-
-Text-based logo matching Mission Control's `{ SENTINEL }` pattern:
 ```
 { SENTINEL }
 ```
-- Curly braces: tech aesthetic, code reference
-- Uppercase: military/enterprise authority
-- Monospace: JetBrains Mono
 
-### Classification Banner
+Braces for the code reference, uppercase for the enterprise-terminal register, JetBrains Mono because everything is.
 
-```
-SENTINEL FEED — INTERNAL USE ONLY
-```
-- 9px font, sans-serif, uppercase
-- 2px letter-spacing
-- `#454549` text on `#1a1a1e` background
-- 20px height, centered
-- 1px bottom border
+## Color
 
-## Color System
+### Base tokens
 
-### Palantir Gotham Palette
-
-Directly inherited from Claude Mission Control. True Palantir: near-black, neutral grays, no blue tint.
-
-#### Backgrounds (darkest to lightest)
-
-| Token | Hex | Usage |
-|-------|-----|-------|
+| Token | Hex | Used for |
+|-------|-----|----------|
 | `--bg-base` | `#0a0a0c` | Page background |
-| `--bg-primary` | `#101114` | Header, column backgrounds |
-| `--bg-panel` | `#161619` | Panel bodies, card backgrounds |
-| `--bg-panel-alt` | `#1a1a1e` | Alternate panels, banner |
-| `--bg-hover` | `#222226` | Hover states |
-| `--bg-active` | `#2a2a2e` | Selected/active items |
-| `--bg-focus` | `rgba(255,255,255,0.04)` | Focus layer |
+| `--bg-primary` | `#111114` | Header, sector cards |
+| `--bg-panel` | `#16161a` | Card bodies, tooltips |
+| `--bg-hover` | `#1e1e23` | Hover state |
+| `--border` | `#26262e` | Every divider and outline |
+| `--text-bright` | `#eaeaf0` | Story titles, active labels |
+| `--text-primary` | `#b8b8c4` | Body text |
+| `--text-secondary` | `#78788a` | Summaries, metadata |
+| `--text-muted` | `#48485a` | Timestamps, inactive controls |
+| `--success` | `#34d399` | Healthy source, sweep line, crosshair |
+| `--warning` | `#fbbf24` | Degraded source |
+| `--danger` | `#f87171` | Error state, critical alert |
+| `--info` | `#94a3b8` | Neutral fallback |
 
-#### Borders
+Four levels of text gray is more than most palettes need, but the density here is high enough that it earns its keep. A story card carries a title, a summary, a badge, an author, a timestamp, and a score in about 40 pixels of height, and the gray step is what stops all six from competing.
 
-| Token | Hex | Usage |
-|-------|-----|-------|
-| `--border` | `#252528` | Primary dividers |
-| `--border-bright` | `#333338` | Secondary dividers, accents |
-| `--border-focus` | `#555555` | Focus outline |
+### Topic colors
 
-#### Text
+Defined in `src/lib/topics.ts` rather than CSS, because the radar reads them in JavaScript to color dots and sector wedges.
 
-| Token | Hex | Usage |
-|-------|-----|-------|
-| `--text-bright` | `#ededf0` | Headers, story titles, important |
-| `--text-primary` | `#c8c8cc` | Body text, descriptions |
-| `--text-secondary` | `#7a7a80` | Labels, metadata, secondary info |
-| `--text-muted` | `#454549` | Hints, disabled, timestamps |
+| Sector | Hex |
+|--------|-----|
+| Security | `#f87171` |
+| AI / ML | `#c084fc` |
+| Systems | `#60a5fa` |
+| Dev | `#4ade80` |
+| Tools | `#fbbf24` |
+| General | `#94a3b8` |
 
-#### Status (Semantic)
+Security shares its hex with `--danger` on purpose. A red dot means the same thing everywhere in the app.
 
-| Token | Hex | Usage |
-|-------|-----|-------|
-| `--success` | `#4ade80` | Healthy source, high relevance |
-| `--success-dim` | `#22803d` | Success borders |
-| `--warning` | `#eab308` | Degraded source, medium relevance |
-| `--warning-dim` | `#92710a` | Warning borders |
-| `--danger` | `#ef4444` | Error state, source down |
-| `--danger-dim` | `#b91c1c` | Danger borders |
-| `--info` | `#94a3b8` | Informational, neutral |
+### Source badges
 
-#### Glow Effects
+Each source gets its own badge color, mostly its real brand color where one exists.
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--glow-accent` | `rgba(200,200,204,0.12)` | Subtle hover glow |
-| `--glow-success` | `rgba(74,222,128,0.15)` | Healthy source glow |
-| `--glow-danger` | `rgba(239,68,68,0.15)` | Error state glow |
-
-### Source Colors
-
-Each source gets a unique accent for badges and indicators:
-
-| Source | Color | Hex |
+| Source | Class | Hex |
 |--------|-------|-----|
-| Hacker News | Orange | `#ff6600` |
-| GitHub Trending | White/Light | `#ededf0` |
-| Reddit | Orange-Red | `#ff4500` |
-| Anthropic | Amber | `#d4a574` |
-| Vercel | White | `#ffffff` |
-| Node.js | Green | `#68a063` |
+| Hacker News | `.badge-hn` | `#ff6600` on black |
+| GitHub Trending | `.badge-gh` | `#8b5cf6` |
+| Lobsters | `.badge-lo` | `#ac2e2e` |
+| Dev.to | `.badge-dev` | `#3b49df` |
+| daily.dev | `.badge-dd` | `#ce3df3` |
+| Techmeme | `.badge-tm` | `#2d8c3c` |
+| InfoQ | `.badge-iq` | `#007dc3` |
 
-## Typography
+Adding a source means adding a rule here as well as a `SourceConfig` entry. There is no fallback badge color beyond a plain `bg-info`.
 
-### Font Stack
+## Type
 
-| Type | Fonts | Usage |
-|------|-------|-------|
-| Monospace (primary) | JetBrains Mono, Fira Code, Cascadia Code | Body text, story titles, data |
-| Sans-serif (secondary) | -apple-system, Helvetica Neue, Arial | Labels, banner, buttons |
+JetBrains Mono, with `ui-monospace` and `monospace` behind it. Body copy is 13px at 1.6 line height. Interface chrome runs smaller: 11px for filter buttons and tabs, 10px for pills, 9px for badges. Labels are uppercase with light letter-spacing, in the 0.02em to 0.08em range depending on size.
 
-### Size Scale
+## Shape
 
-| Token | Size | Usage |
-|-------|------|-------|
-| `--font-size-xs` | 10px | Timestamps, metadata |
-| `--font-size-sm` | 11px | Labels, badges |
-| `--font-size-base` | 12px | Body text, descriptions |
-| `--font-size-md` | 13px | Story titles |
-| `--font-size-lg` | 14px | Panel headers, stats |
+Nothing has a border radius. The only exception in the stylesheet is the scrollbar thumb at 2px, which is small enough not to register.
 
-### Text Rendering
+Borders are always `1px solid var(--border)`. Emphasis comes from a colored left or top edge instead of a heavier outline: sector cards get a 2px top border in their topic color, tooltips get a 3px left border, the active topic tab gets a 2px bottom border.
 
-```css
--webkit-font-smoothing: antialiased;
--moz-osx-font-smoothing: grayscale;
-```
+Shadows are only used on things that float. Sector tooltips get `0 8px 24px rgba(0,0,0,0.5)`, radar briefings get `0 12px 32px rgba(0,0,0,0.6)`.
 
-### Text Conventions
+## Motion
 
-- **Headers/labels:** Uppercase, letter-spacing 1-2px, sans-serif, `--text-secondary`
-- **Story titles:** Normal case, `--text-bright`, monospace
-- **Metadata:** Uppercase, letter-spacing 0.5px, `--text-muted`
-- **Source badges:** Uppercase, letter-spacing 1px, 9px, bold 700
+Hover and color transitions are 120ms ease, fast enough to feel mechanical rather than smooth. That is deliberate.
 
-## Spacing & Geometry
+The radar has its own set of loops, all in `globals.css`:
 
-### Border Radius
+| Animation | Timing | What it does |
+|-----------|--------|--------------|
+| `radar-spin` | 6s linear infinite | The sweep line |
+| `radar-dot-blink` | 6s ease-in-out infinite | Dots flare as the sweep passes, phase-offset per dot by its angle |
+| `radar-pulse-anim` | 2s ease-in-out infinite | Critical dot halo |
+| `alert-pulse` | 3s ease-in-out infinite | Critical alerts banner |
+| `scanline-drift` | 12s linear infinite | CRT overlay, drifting 8px |
+| `radar-card-in` | 180ms, `cubic-bezier(0.22, 1, 0.36, 1)` | Pinned briefing entrance |
 
-```
---radius: 0px
-```
+The dot blink delay is computed per dot from its angle on the radar, so the flare tracks the sweep instead of everything blinking at once. That is the one piece of the effect that has to be calculated in JS.
 
-**Everything is sharp-cornered.** No rounded edges anywhere. This is core to the Palantir aesthetic.
+`radar-card-in` has a second variant, `radar-card-in-flip`, for desktop. The briefing card is already positioned with `translateX(var(--tooltip-flip))` to keep it from clipping the right edge, so the entrance keyframes have to carry that transform through or the card jumps sideways as it animates. Both variants are disabled under `prefers-reduced-motion: reduce`.
 
-Only exception: scrollbar thumb (2px radius).
-
-### Borders
-
-- All borders: `1px solid var(--border)`
-- Decorative borders: `stroke-dasharray: 2 4`
-
-### Shadows
-
-| Context | Shadow |
-|---------|--------|
-| Panels | `0 4px 16px rgba(0,0,0,0.4)` |
-| Overlays | `0 8px 40px rgba(0,0,0,0.7)` |
-| Selected rows | `inset 2px 0 0 var(--accent)` |
-
-### Scrollbars
-
-```css
-::-webkit-scrollbar { width: 3px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: var(--border-bright); }
-```
-
-## Component Patterns
-
-### Classification Banner
-
-```
-┌──────────────────────────────────────────────────────────┐
-│          SENTINEL FEED — INTERNAL USE ONLY                │
-└──────────────────────────────────────────────────────────┘
-```
-- 20px height
-- `--bg-panel-alt` background
-- 1px bottom border
-- 9px sans-serif, uppercase, 2px letter-spacing
-- `--text-muted` color
-
-### Header Bar
-
-```
-┌──────────────────────────────────────────────────────────┐
-│  { SENTINEL }   SOURCES 2  STORIES 47  UPDATED 3m   ● │
-└──────────────────────────────────────────────────────────┘
-```
-- 44px height
-- `--bg-primary` background
-- Logo left, stats center, connection dot right
-- Stats: uppercase label + value pairs
-
-### Story Card
-
-```
-┌──────────────────────────────────────────────────────────┐
-│  HN  Show HN: I built a Rust compiler in 30 days   342 │
-│  Demonstrates modern compiler design patterns       3h  │
-└──────────────────────────────────────────────────────────┘
-```
-- `--bg-panel` background
-- 1px border `--border`
-- 10px 12px padding
-- Source badge (9px, uppercase, bold, source-colored)
-- Title in `--text-bright`, monospace
-- Score right-aligned, `--text-secondary`
-- Summary in `--text-primary`, smaller
-- Timestamp in `--text-muted`, right-aligned
-- Hover: `--bg-hover`, 80ms transition
-
-### Source Panel Item
-
-```
-┌──────────────────────────────────────────────────────────┐
-│  ● Hacker News              47 stories    fetched 3m ago │
-│  ● GitHub Trending          23 stories    fetched 3m ago │
-└──────────────────────────────────────────────────────────┘
-```
-- Status dot: `--success` (healthy), `--warning` (degraded), `--danger` (error)
-- Active source dot pulses (2s animation)
-- Source name in `--text-primary`
-- Count + timestamp in `--text-muted`
-
-### Stats Bar Values
-
-| Stat | Format | Example |
-|------|--------|---------|
-| Sources | `SOURCES {n}` | `SOURCES 2` |
-| Stories today | `STORIES {n}` | `STORIES 142` |
-| Last update | `UPDATED {relative}` | `UPDATED 3m` |
-
-### Filter Buttons
-
-```
-[ ALL ]  [ HN ]  [ GITHUB ]     [ 6H ]  [ 12H ]  [ 24H ]  [ 7D ]
-```
-- Active: `--bg-active` + `--text-bright` + 1px `--border-bright`
-- Inactive: transparent + `--text-secondary`
-- Hover: `--bg-hover`, 80ms transition
-- 9px uppercase, monospace
-
-## Animations
-
-### Transitions
-
-| Context | Duration | Easing |
-|---------|----------|--------|
-| Button/row hover | 80ms | ease |
-| Panel collapse | 150ms | ease |
-| Color changes | 150ms | ease |
-
-### Keyframe Animations
-
-| Animation | Duration | Usage |
-|-----------|----------|-------|
-| `pulse-dot` | 2s ease-in-out infinite | Active source status dot |
-| `blink-alert` | 1.2s step-end infinite | Error/degraded source |
-| `scanline-scroll` | — (static) | CRT overlay (no animation, repeating gradient) |
-
-### Pulse Dot
-
-```css
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-```
-
-## Effects
-
-### CRT Scanlines
-
-Fixed overlay, `pointer-events: none`, `z-index: 9999`:
-```css
-background: repeating-linear-gradient(
-  0deg,
-  transparent,
-  transparent 2px,
-  rgba(0, 0, 0, 0.03) 2px,
-  rgba(0, 0, 0, 0.03) 4px
-);
-```
-
-### Glow on Hover
-
-Story cards get a subtle glow on hover:
-```css
-box-shadow: 0 0 8px var(--glow-accent);
-```
+The scanline overlay is a repeating linear gradient at 3% white, `pointer-events: none`, sitting over the radar only.
 
 ## Layout
 
-### Desktop (>900px)
+Desktop puts the six sector cards in a 3x2 grid with a 1px gap that shows the border color through, so the grid lines are the background rather than drawn borders. Below 1024px it becomes 2x3. Below 640px it stays 2x3 but sector cards drop their max height and scroll with the page instead.
 
-```
-┌──────────────────────────────────────────────────────┐
-│ Classification Banner                                 │
-├──────────────────────────────────────────────────────┤
-│ Header Bar                                           │
-├──────────────────┬───────────────────────────────────┤
-│ Sources Panel    │ Stories Feed                       │
-│ (220-320px)      │ (remaining space)                  │
-│                  │                                    │
-│ ● Hacker News    │ ┌──────────────────────────────┐  │
-│ ● GitHub Trend.  │ │ Story Card                   │  │
-│                  │ └──────────────────────────────┘  │
-│ ─────────────    │ ┌──────────────────────────────┐  │
-│ Filters          │ │ Story Card                   │  │
-│ [ALL] [HN] [GH]  │ └──────────────────────────────┘  │
-│ [6H][12H][24H]   │ ┌──────────────────────────────┐  │
-│                  │ │ Story Card                   │  │
-│                  │ └──────────────────────────────┘  │
-│                  │                                    │
-└──────────────────┴───────────────────────────────────┘
-```
+Sector tooltips flip to the left side of the card when the card is in the rightmost column, and that column changes with the breakpoint, so the `:nth-child` rules are duplicated per media query. Below 640px they are hidden outright: there is no hover on a phone, and the radar's tap-to-pin briefing covers that case properly.
 
-- 2-column grid: `minmax(220px, 320px) 1fr`
-- Left: sources + filters (scrollable)
-- Right: story feed (scrollable)
+## Copy
 
-### Mobile (<640px)
+Terse and mechanical. Labels are uppercase (`SOURCES`, `STORIES`, `UPDATED`). Timestamps are relative and abbreviated (`3m`, `2h`). Status is a colored dot, not a word, unless something is wrong.
 
-```
-┌──────────────────────────────┐
-│ { SENTINEL }           ●     │
-├──────────────────────────────┤
-│                              │
-│ ┌──────────────────────────┐ │
-│ │ Story Card               │ │
-│ └──────────────────────────┘ │
-│ ┌──────────────────────────┐ │
-│ │ Story Card               │ │
-│ └──────────────────────────┘ │
-│                              │
-├──────────────────────────────┤
-│ [Sources] [Feed] [Bookmarks] │
-└──────────────────────────────┘
-```
+Verbs lean technical: fetched, aggregated, filtered. Not collected or gathered.
 
-- Single column
-- Bottom tab bar (44px)
-- Tab-based navigation
-- Compact header (logo + connection dot only)
+Empty and error states stay in register:
 
-## Tailwind CSS Mapping
+- Nothing fetched yet: `AWAITING INITIAL FETCH`
+- Filters match nothing: `NO MATCHES`
+- Source returned nothing: `NO INTEL`
+- Rate limited: the auto-refresh notice says so plainly rather than silently going stale
 
-The design system maps to Tailwind CSS via `tailwind.config.ts`:
+## Metadata
 
-```typescript
-// Colors map to CSS custom properties
-colors: {
-  bg: {
-    base: 'var(--bg-base)',
-    primary: 'var(--bg-primary)',
-    panel: 'var(--bg-panel)',
-    'panel-alt': 'var(--bg-panel-alt)',
-    hover: 'var(--bg-hover)',
-    active: 'var(--bg-active)',
-  },
-  border: {
-    DEFAULT: 'var(--border)',
-    bright: 'var(--border-bright)',
-  },
-  text: {
-    bright: 'var(--text-bright)',
-    primary: 'var(--text-primary)',
-    secondary: 'var(--text-secondary)',
-    muted: 'var(--text-muted)',
-  },
-  status: {
-    success: 'var(--success)',
-    warning: 'var(--warning)',
-    danger: 'var(--danger)',
-    info: 'var(--info)',
-  },
-},
-borderRadius: {
-  DEFAULT: '0px',  // Sharp corners everywhere
-},
-fontFamily: {
-  mono: ['var(--font-mono)'],
-  sans: ['var(--font-sans)'],
-},
-```
-
-## Voice & Tone
-
-### Dashboard Copy
-
-- **Terse** — no unnecessary words
-- **Uppercase labels** — SOURCES, STORIES, UPDATED, FETCHED
-- **Relative timestamps** — "3m ago", "2h ago", "yesterday"
-- **Status indicators** — dots and colors, not words
-- **Technical** — "fetched", "aggregated", "filtered", not "collected", "gathered"
-
-### Error States
-
-- Source degraded: yellow dot, "DEGRADED" badge
-- Source error: red dot, "ERROR" badge, blinking animation
-- No stories: "NO INTEL" in `--text-muted`
-- Stale data: "STALE — LAST FETCH {time}" in `--warning`
-
-### Empty States
-
-- First run: "AWAITING INITIAL FETCH — STAND BY"
-- No results for filter: "NO MATCHES — ADJUST FILTERS"
-- Source has no stories: "NO INTEL FROM THIS SOURCE"
-
-## Favicon & Metadata
-
-- Favicon: simple `S` in monospace on dark background (SVG)
-- Title: `Sentinel Feed — Tech Intelligence`
-- Description: `Personal tech intelligence feed. AI-filtered, AI-summarized.`
+- Title: `Sentinel Feed: Tech Intelligence Radar`
 - Theme color: `#0a0a0c`
-- OG image: dashboard screenshot with classification banner
+- Favicon and app icons: `public/`, generated by `generate_icons.py`
+- OG image: `public/og-image.png`, a dashboard capture

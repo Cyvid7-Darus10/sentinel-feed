@@ -43,7 +43,7 @@ export function PromoBanner() {
         <span className="text-[13px]">&#x1F4E1;</span>
         <span className="text-text-secondary">
           <span className="font-semibold text-text-bright">Sentinel Bar</span>
-          {' '}— native macOS menu bar app. Get tech news at a glance without opening your browser.
+          {' '}is the native macOS menu bar app. Tech news at a glance, without opening your browser.
           <a
             href={APP_STORE_URL}
             target="_blank"

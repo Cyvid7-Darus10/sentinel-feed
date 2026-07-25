@@ -15,7 +15,8 @@ import type { SourceHealth } from '@/lib/types';
 import { getSourceDisplayName } from '@/lib/sources';
 import { verifyCronAuth } from '@/lib/cron-auth';
 
-// Allow up to 60s for fetching all sources + AI enrichment
+// Seven parallel fetchers at a 10s timeout each, plus one batched model call.
+// 60s leaves headroom for the slowest source without letting the cron hang.
 export const maxDuration = 60;
 
 export async function GET(request: NextRequest) {

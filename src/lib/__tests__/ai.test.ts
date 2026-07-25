@@ -137,7 +137,7 @@ describe('enrichStories', () => {
   });
 
   it('analyzes every story by splitting into batches of 50', async () => {
-    // 51 stories: one full batch of 50 plus a second batch of 1 — none skip
+    // 51 stories: one full batch of 50 plus a second batch of 1. Nothing gets skipped.
     // the relevance filter.
     const stories = Array.from({ length: 51 }, (_, i) =>
       makeStory({ id: `hn-${i}`, title: `Story ${i}` })

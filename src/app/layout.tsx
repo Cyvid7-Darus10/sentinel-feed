@@ -20,11 +20,11 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: 'Sentinel Feed — Tech Intelligence Radar',
+    default: 'Sentinel Feed: Tech Intelligence Radar',
     template: '%s | Sentinel Feed',
   },
   description:
-    'AI-curated tech news radar. Stories from Hacker News, GitHub Trending, Lobsters, Dev.to, daily.dev, Techmeme, and InfoQ — filtered, summarized, and categorized in real time. Stay current in 5 minutes.',
+    'Seven developer news sources on one radar. Hacker News, GitHub Trending, Lobsters, Dev.to, daily.dev, Techmeme, and InfoQ, deduplicated and sorted by topic every 15 minutes, with AI summaries and security alerts.',
   keywords: [
     'tech news',
     'hacker news',
@@ -50,23 +50,23 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: '/',
     siteName: 'Sentinel Feed',
-    title: 'Sentinel Feed — Tech Intelligence Radar',
+    title: 'Sentinel Feed: Tech Intelligence Radar',
     description:
-      'AI-curated tech news radar. Stories from Hacker News, GitHub Trending, Lobsters, Dev.to, daily.dev, Techmeme, and InfoQ — filtered and summarized in real time.',
+      'Seven developer news sources on one radar, refreshed every 15 minutes. Hacker News, GitHub Trending, Lobsters, Dev.to, daily.dev, Techmeme, and InfoQ, deduplicated and summarized.',
     images: [
       {
         url: '/og-image.png',
         width: 2400,
         height: 1260,
-        alt: 'Sentinel Feed — AI-curated tech intelligence radar',
+        alt: 'The Sentinel Feed radar dashboard',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Sentinel Feed — Tech Intelligence Radar',
+    title: 'Sentinel Feed: Tech Intelligence Radar',
     description:
-      'AI-curated tech news from HN, GitHub Trending, Lobsters, Dev.to, daily.dev, Techmeme, and InfoQ. Stay current in 5 minutes.',
+      'Seven dev news sources on one radar: HN, GitHub Trending, Lobsters, Dev.to, daily.dev, Techmeme, InfoQ. Deduplicated, ranked, summarized.',
     images: ['/og-image.png'],
   },
   robots: {

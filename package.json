@@ -2,7 +2,7 @@
   "name": "sentinel-feed",
   "version": "1.0.0",
   "license": "Apache-2.0",
-  "description": "AI-curated tech intelligence radar — stories from Hacker News, GitHub Trending, Lobsters, Dev.to, daily.dev, Techmeme, and InfoQ, filtered and summarized in real time.",
+  "description": "Seven developer news sources on one radar: Hacker News, GitHub Trending, Lobsters, Dev.to, daily.dev, Techmeme, and InfoQ, deduplicated and summarized every 15 minutes.",
   "engines": {
     "node": ">=20"
   },

@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
       ? stories.filter((s) => s.source === source)
       : stories;
 
-    // Sort by score descending, then by fetchedAt descending
+    // Score first, recency as the tiebreak. Sources with no score (RSS feeds) sort to
+    // the bottom via ?? 0 and then order among themselves by arrival.
     const sorted = [...filtered].sort((a, b) => {
       const scoreA = a.score ?? 0;
       const scoreB = b.score ?? 0;

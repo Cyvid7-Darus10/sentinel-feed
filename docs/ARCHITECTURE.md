@@ -1,328 +1,161 @@
-# Sentinel Feed — Architecture
+# Architecture
 
-> System architecture for the personal tech intelligence feed.
-
-## Overview
-
-Sentinel Feed is a serverless news aggregation pipeline deployed on Vercel. It runs on a 15-minute cron cycle, pulling stories from multiple sources, filtering and summarizing them with Claude AI, and presenting them in a Palantir-styled dashboard.
-
-There is no persistent server. No database. Just Vercel Functions triggered by cron, Vercel Blob for storage, and Next.js Server Components for rendering.
-
-## System Diagram
+There is no server and no database. Two Vercel Cron schedules hit two route handlers, those handlers write JSON blobs, and Next.js reads the blobs back on render. That is the whole system.
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     Vercel Platform                          │
-│                                                             │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │  Cron Jobs (vercel.json)                             │   │
-│  │  */15 * * * *  → POST /api/fetch                     │   │
-│  │  0 0 * * *     → POST /api/cleanup                   │   │
-│  └───────┬──────────────────────────────┬───────────────┘   │
-│          │                              │                    │
-│          ▼                              ▼                    │
-│  ┌───────────────┐              ┌───────────────┐           │
-│  │ /api/fetch    │              │ /api/cleanup   │           │
-│  │               │              │               │           │
-│  │ 1. Fetch HN   │              │ Delete blobs  │           │
-│  │ 2. Fetch GH   │              │ older than    │           │
-│  │ 3. Dedup URLs │              │ 7 days        │           │
-│  │ 4. AI filter  │              └───────┬───────┘           │
-│  │ 5. AI summary │                      │                    │
-│  │ 6. Write blob │                      │                    │
-│  └───────┬───────┘                      │                    │
-│          │                              │                    │
-│          ▼                              ▼                    │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │                  Vercel Blob                          │   │
-│  │                                                      │   │
-│  │  feed/2026-04-01.json     ← today's stories          │   │
-│  │  feed/2026-03-31.json     ← yesterday                │   │
-│  │  feed/2026-03-30.json     ← ...                      │   │
-│  │  feed/2026-03-29.json     ← ...                      │   │
-│  │  feed/...                 ← up to 7 days             │   │
-│  │  meta/sources.json        ← source health status     │   │
-│  │                                                      │   │
-│  └───────────────────────────────────────┬──────────────┘   │
-│                                          │                   │
-│          ┌───────────────────────────────┘                   │
-│          │                                                   │
-│          ▼                                                   │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │            Next.js App Router (Dashboard)             │   │
-│  │                                                      │   │
-│  │  ┌────────────────────────────────────────────────┐  │   │
-│  │  │  Server Components (zero client JS)            │  │   │
-│  │  │  • Story cards with source badges              │  │   │
-│  │  │  • Source health panel                         │  │   │
-│  │  │  • Stats bar (stories today, sources, etc.)    │  │   │
-│  │  │  • Classification banner                       │  │   │
-│  │  └────────────────────────────────────────────────┘  │   │
-│  │                                                      │   │
-│  │  ┌────────────────────────────────────────────────┐  │   │
-│  │  │  Client Components ('use client')              │  │   │
-│  │  │  • Source filter buttons                       │  │   │
-│  │  │  • Time range selector                         │  │   │
-│  │  │  • Search input                                │  │   │
-│  │  │  • Mobile tab navigation                       │  │   │
-│  │  │  • Auto-refresh polling (60s interval)         │  │   │
-│  │  └────────────────────────────────────────────────┘  │   │
-│  │                                                      │   │
-│  └──────────────────────────────────────────────────────┘   │
-│                                                             │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │            Vercel AI Gateway                          │   │
-│  │                                                      │   │
-│  │  OIDC auth (no API keys)                             │   │
-│  │  → Claude Haiku                                      │   │
-│  │  → Cost tracking + observability                     │   │
-│  │                                                      │   │
-│  └──────────────────────────────────────────────────────┘   │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-
-External Sources (read-only, no auth):
-
-  ┌──────────────┐   ┌──────────────────┐
-  │ Hacker News  │   │ GitHub Trending   │
-  │ Firebase API │   │ HTML scrape       │
-  │ (free)       │   │ (cheerio parse)   │
-  └──────────────┘   └──────────────────┘
+Vercel Cron ──*/15 * * * *──> GET /api/fetch ──┐
+            ──0 0 * * *────> GET /api/cleanup ─┤
+                                               ▼
+                                        Vercel Blob
+                                        feed/2026-07-25.json
+                                        feed/2026-07-24.json   (7 days back)
+                                        meta/sources.json
+                                               │
+                                               ▼
+                            Next.js App Router (RSC first render)
+                                               │
+                            client polls /api/stories + /api/sources every 60s
 ```
 
-## Data Flow
+The seven upstream sources are all public and unauthenticated: Hacker News (Firebase REST), GitHub Trending (HTML, parsed with cheerio), Lobsters (JSON), Dev.to (Forem REST), daily.dev (GraphQL), Techmeme and InfoQ (RSS).
 
-### Fetch Cycle (every 15 minutes)
+## The fetch cycle
 
-```
-1. Vercel Cron triggers POST /api/fetch
-   │
-2. Fetch sources in parallel:
-   │  ├── HN: GET /v0/topstories.json → batch fetch top 30 items
-   │  └── GH: GET /trending/typescript, /trending/python, etc. → cheerio parse
-   │
-3. Load existing today's blob (feed/{date}.json) for URL dedup
-   │
-4. Filter new stories only (URL not in existing blob)
-   │
-5. AI processing (Claude Haiku via AI Gateway):
-   │  ├── Relevance filter: "Is this tech news?" → boolean
-   │  └── Title summary: "Why does this matter?" → one-liner
-   │
-6. Merge new stories into today's blob
-   │
-7. Write updated blob to Vercel Blob
-   │
-8. Update source health in meta/sources.json
-```
+`GET /api/fetch` runs every 15 minutes with `maxDuration = 60`.
 
-### Dashboard Render (on page load)
+1. `verifyCronAuth` checks the `Authorization: Bearer $CRON_SECRET` header and returns a 401 response object if it does not match. Everything below is skipped on failure.
+2. Read today's blob and build a `Set` of normalized URLs from it.
+3. `fetchAllSources` runs all seven fetchers concurrently under `Promise.allSettled`. Each fetcher is also individually wrapped in try/catch, so a thrown error becomes `{ source, stories: [], error: message }` instead of taking down the cycle. Every fetcher passes `AbortSignal.timeout(FETCHER_TIMEOUT_MS)` to `fetch`, currently 10 seconds.
+4. Each fetcher's results are filtered against the existing URL set, then `dedupeStoriesByUrl` collapses the combined list. Both passes are needed: the first catches a story already stored from an earlier cycle, the second catches the same link arriving from HN and Lobsters in the same run.
+5. `enrichStories` splits everything into concurrent batches of 50 and asks Claude Haiku for a relevance boolean and a one-line summary per story. The batch size bounds prompt length, not total spend; every story gets analyzed.
+6. Anything marked `relevant: false` is dropped. The rest is appended to today's blob.
+7. Per-source health goes to `meta/sources.json`: last fetch time, count, status, error message, running total for the day.
 
-```
-1. Server Component reads last 7 days of blobs from Vercel Blob
-   │
-2. Merges and sorts stories (by score descending, then by recency)
-   │
-3. Renders story cards, source panel, stats bar as HTML (zero JS)
-   │
-4. Client Components hydrate for interactivity:
-   │  ├── Source filter buttons
-   │  ├── Time range selector (6H / 12H / 24H / 7D)
-   │  ├── Search input
-   │  └── Auto-refresh polling (fetches /api/stories every 60s)
-```
+Two properties fall out of this ordering that are worth keeping. Dedup runs before enrichment, so a story is never paid for twice. And AI failure is not fatal: a batch that throws returns its own stories untouched, so a Gateway blip costs summaries on part of one cycle rather than the whole run.
 
-### Cleanup (daily at midnight)
+## Render
 
-```
-1. Vercel Cron triggers POST /api/cleanup
-   │
-2. List all blobs in feed/ prefix
-   │
-3. Delete any blob with date > 7 days ago
-   │
-4. Log cleanup results
-```
+`src/app/page.tsx` is a server component with `dynamic = 'force-dynamic'`. It reads today's stories and the health blob in parallel and hands both to `<TacticalMap>` as props, so the first paint has real content in the HTML.
 
-## Storage Model
+From there the client takes over. `useStoryFeed` polls `/api/stories?days=N` and `/api/sources` on a 60-second interval, seeded with the server's data so there is no empty flash. The hook tracks a `cancelled` flag because changing the time range re-runs the effect, and a slow in-flight response from the old range must not overwrite the new one. A 429 from either endpoint flips a `rateLimited` flag and the UI says so rather than silently going stale.
 
-### Why Vercel Blob (Not a Database)
+Everything below `<TacticalMap>` is client-side: three view components (radar, sector map, list), the toolbar, and the filters. The radar layout itself is computed by `src/lib/radar-geometry.ts`, which is pure and covered by tests.
 
-| Consideration | Database (Turso, Neon) | Vercel Blob |
-|---------------|----------------------|-------------|
-| Complexity | Schema, migrations, ORM | JSON files, `put`/`get`/`del` |
-| Cost | Free tier then paid | Free tier covers 7 days of JSON |
-| Query flexibility | Full SQL | Read full blob, filter in-memory |
-| 7-day retention | Needs cleanup query | Delete old blobs |
-| Deployment | Connection strings, pooling | `BLOB_READ_WRITE_TOKEN` auto-provisioned |
+## Cleanup
 
-For a 7-day rolling window of ~200 stories/day, each daily blob is ~50-100KB. Total storage is under 1MB. A database is overkill.
+`GET /api/cleanup` runs at midnight, same auth check. It pages through `list({ prefix: 'feed/' })` with a cursor, matches `YYYY-MM-DD.json` out of each pathname, and deletes anything with a date string older than the cutoff. String comparison works here because ISO dates sort lexicographically.
 
-### Blob Structure
+## Storage
+
+### Why blobs and not a database
+
+At roughly 200 stories a day, a daily blob lands around 50 to 100 KB, and a 7-day window is under 1 MB total. Against that, a database means a schema, migrations, an ORM, a connection string, and pooling. The queries the app needs are "give me the last N days" and "filter by source", both of which are a `.filter()` over an array already in memory.
+
+| | Database | Vercel Blob |
+|---|---|---|
+| Setup | Schema, migrations, ORM, pooling | `put`, `head`, `list`, `del` |
+| Retention | Scheduled delete query | Delete old blobs |
+| Credentials | Connection string to manage | `BLOB_READ_WRITE_TOKEN` auto-provisioned |
+| Cost at this size | Free tier, then paid | Free tier covers it |
+
+The tradeoff is real: there is no partial write, no transaction, and no query beyond reading the whole file. At a couple hundred KB, none of that has bitten yet. It would at ten times the volume.
+
+### Layout
 
 ```
 feed/
-  2026-04-01.json       # Array of Story objects for today
-  2026-03-31.json       # Yesterday
-  2026-03-30.json       # ...
-  ...                   # Up to 7 days back
+  2026-07-25.json   # array of Story, today
+  2026-07-24.json   # yesterday, back 7 days
 meta/
-  sources.json          # Source health and status
+  sources.json      # SourceHealth
 ```
 
-### Story Schema
+Writes use `addRandomSuffix: false` and `allowOverwrite: true` so the path stays predictable and today's blob is replaced in place rather than accumulating versions.
+
+### Shapes
 
 ```typescript
+type SourceId =
+  | 'hackernews' | 'github-trending' | 'lobsters'
+  | 'devto' | 'dailydev' | 'techmeme' | 'infoq';
+
 interface Story {
-  id: string;                                    // "hn-12345" or "gh-owner/repo"
-  source: 'hackernews' | 'github-trending';
-  title: string;
-  url: string;                                   // Unique key for dedup
-  score: number | null;                          // HN points or GH stars today
-  author: string | null;
-  description: string | null;
-  tags: string[];                                // Languages, topics
-  summary: string | null;                        // AI one-liner
-  relevant: boolean;                             // AI tech relevance
-  fetchedAt: string;                             // ISO timestamp
-  publishedAt: string | null;
+  readonly id: string;              // 'hn-12345', 'lo-abc123'
+  readonly source: SourceId;
+  readonly title: string;
+  readonly url: string;             // dedup key, after normalizeUrl()
+  readonly score: number | null;    // upvotes, stars, reactions, per source
+  readonly author: string | null;
+  readonly description: string | null;
+  readonly tags: readonly string[];
+  readonly summary: string | null;  // AI one-liner, null when disabled
+  readonly relevant: boolean;
+  readonly fetchedAt: string;       // ISO
+  readonly publishedAt: string | null;
+}
+
+interface SourceStatus {
+  readonly name: string;
+  readonly lastFetchAt: string | null;
+  readonly lastFetchCount: number;
+  readonly status: 'healthy' | 'degraded' | 'error';
+  readonly errorMessage: string | null;
+  readonly totalStoriesToday: number;
 }
 ```
 
-### Source Health Schema
+## Routes
 
-```typescript
-interface SourceHealth {
-  sources: {
-    [key: string]: {
-      name: string;
-      lastFetchAt: string | null;
-      lastFetchCount: number;
-      status: 'healthy' | 'degraded' | 'error';
-      errorMessage: string | null;
-      totalStoriesToday: number;
-    };
-  };
-  updatedAt: string;
-}
-```
+| Route | Method | Called by | Does |
+|-------|--------|-----------|------|
+| `/api/fetch` | GET | Cron, `*/15 * * * *` | Fetch, dedup, enrich, store |
+| `/api/stories` | GET | Client poll | `?days=1..7`, `?source=<SourceId>`, sorted by score then recency |
+| `/api/sources` | GET | Client poll | Source health blob |
+| `/api/cleanup` | GET | Cron, `0 0 * * *` | Delete blobs past the retention window |
 
-## API Routes
+Both read routes send the shared `PUBLIC_GET_HEADERS` from `config.ts`, which carries `Cache-Control: public, s-maxage=60, stale-while-revalidate=300`. The CDN absorbs the polling, so the origin sees roughly one request per minute regardless of how many tabs are open.
 
-| Route | Method | Trigger | Purpose |
-|-------|--------|---------|---------|
-| `/api/fetch` | `POST` | Vercel Cron (*/15 * * * *) | Fetch all sources, AI process, store in blob |
-| `/api/stories` | `GET` | Dashboard polling | Returns stories (query: `?source=hn&days=1`) |
-| `/api/sources` | `GET` | Dashboard | Returns source health status |
-| `/api/cleanup` | `POST` | Vercel Cron (0 0 * * *) | Delete blobs older than 7 days |
+Both cron routes go through `verifyCronAuth`, which compares the bearer token to `CRON_SECRET` and logs a warning noting only whether a header was present. The token itself never reaches the logs.
 
-### Cron Security
+Input validation on `/api/stories` is deliberately narrow. `source` is checked against `VALID_SOURCE_SET` and dropped if it does not match, and `days` is parsed, `NaN`-guarded, and clamped to 1 through 7. Nothing from the query string reaches a blob path.
 
-All cron routes verify the `CRON_SECRET` header:
-```typescript
-if (request.headers.get('Authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
-  return Response.json({ error: 'Unauthorized' }, { status: 401 });
-}
-```
+## Classification
 
-## Rendering Strategy
+Two independent passes, neither of which calls a model.
 
-### Server Components (Default — Zero Client JS)
+`categorizeTopic` assigns exactly one of six sectors by testing regexes against the title, description, and tags. Order matters, because the first match wins: security, then AI, then systems, then tools, then dev, with general as the fallback. A story about a Kubernetes CVE lands in security, not tools.
 
-Most of the dashboard renders server-side and ships no JavaScript:
-- Story cards (title, summary, source badge, score, timestamp)
-- Source health panel (status dots, last fetch time, story count)
-- Stats bar (total stories, active sources, last update)
-- Classification banner
-- CRT scanlines overlay
+`classification.ts` is separate and orthogonal. It flags critical security stories by regex, independent of which sector the story landed in. Regex rather than a model call is a cost and latency decision. Also a correctness one: the CVE pattern either matches or it does not, which is not something a summarizer should get a vote on.
 
-### Client Components (Interactive Only)
+## What the AI does and does not do
 
-Only interactive elements use `'use client'`:
-- `<SourceFilter />` — filter stories by source
-- `<TimeRange />` — select time window (6H / 12H / 24H / 7D)
-- `<SearchInput />` — search stories by keyword
-- `<MobileTabs />` — tab navigation on mobile
-- `<AutoRefresh />` — polls `/api/stories` every 60 seconds
+It does two things, both in a single batched call per cycle: decide whether a story is relevant to software engineers, and write a one-line reason it matters, capped at 120 characters. `temperature: 0`, structured output validated by a zod schema through `Output.array`.
 
-This keeps the initial page load minimal — most content is pre-rendered HTML.
+It does not fetch or summarize article bodies, generate embeddings, do multi-turn reasoning, or touch images.
 
-## AI Processing
+The output length is checked against the input length. If the model returns a different number of results, that batch falls back to neutral defaults (`relevant: true`, no summary) rather than risking a misaligned zip that would attach the wrong summary to the wrong story. Keeping an unsummarized story is cheap; mislabeling one is not.
 
-### What AI Does (Scoped and Simple)
+Both fallback paths fail open, letting unfiltered stories through, which is the right direction for a news feed but does mean a persistent AI outage shows up as a noisier feed rather than an empty one. That is why the batch failure logs a warning.
 
-1. **Relevance filter** — given a title and URL, is this tech-relevant? (yes/no)
-2. **Title summary** — one-liner "why this matters to a developer" (max 100 chars)
+Cost stays low because dedup runs first: a full cold run is around 170 candidates, but a steady-state cycle usually has 10 to 20 genuinely new stories. That lands in the low single digits of dollars per month. Setting `ENABLE_AI_ENRICHMENT=false` skips the calls entirely and the app still works, just without summaries.
 
-### What AI Does NOT Do
+## Security posture
 
-- No full-article summarization (not fetching article content)
-- No embedding/vector search
-- No multi-turn reasoning
-- No image analysis
+The app has no users, no auth, no forms, and no writes from the browser. That removes most of the usual surface area. What is left:
 
-### Cost Model
+- `CRON_SECRET` gates both write routes.
+- `BLOB_READ_WRITE_TOKEN` is server-side only and never crosses into a client component.
+- Story URLs pass through `isSafeUrl` before being rendered as links, which keeps `javascript:` and other non-http schemes out of `href`.
+- Story data is public information from public APIs. No PII is stored, and none is sent to Anthropic beyond titles and descriptions.
+- Error responses to clients are generic. Details go to `console.error` on the server.
 
-- ~50 stories/fetch cycle × ~200 input tokens × $0.80/MTok = ~$0.008 per cycle
-- 96 cycles/day = ~$0.77/day = ~$23/month at full rate
-- In practice, dedup means only ~10-20 new stories per cycle = **~$5-8/month**
-- Batching stories into a single prompt reduces this further to **~$1-2/month**
+## Failure modes
 
-### Prompt Strategy
-
-Batch multiple titles into one prompt to minimize API calls:
-
-```
-You are a tech news relevance filter. Given these story titles, for each one:
-1. Is it relevant to software engineering? (true/false)
-2. One-line summary of why it matters (max 100 chars, or null if not relevant)
-
-Stories:
-1. "Show HN: I built a Rust compiler in 30 days"
-2. "Why the housing market is crashing"
-3. "Next.js 17 introduces server-only modules"
-
-Respond as JSON array.
-```
-
-## Security
-
-- **No API keys in code** — AI Gateway uses OIDC (auto-provisioned by Vercel)
-- **Cron routes protected** — `CRON_SECRET` header verification
-- **No user input** — dashboard is read-only, no forms, no auth needed
-- **No PII** — stories are public data from public APIs
-- **Blob access** — `BLOB_READ_WRITE_TOKEN` is server-side only
-
-## Performance
-
-| Metric | Target | How |
-|--------|--------|-----|
-| First load JS | < 80KB | RSC for most content, minimal client components |
-| Dashboard load | < 1s | Blob reads are CDN-cached, RSC pre-renders |
-| Fetch cycle | < 30s | Parallel source fetching, batched AI calls |
-| Stories/day | ~200-500 | 30 from HN + 25 per language from GH × 4 languages |
-
-## Failure Modes
-
-| Failure | Impact | Handling |
-|---------|--------|---------|
-| HN API down | No new HN stories | `Promise.allSettled`, partial results ok, source status → degraded |
-| GitHub HTML changes | No trending repos | try/catch, empty result, source status → error, log warning |
-| AI Gateway error | No summaries | Stories still stored without summaries, retry next cycle |
-| Blob write fails | Stories lost for this cycle | Retry next cycle (15 min), no data corruption risk |
-| Cron doesn't fire | Feed goes stale | Dashboard shows "last fetch" timestamp, user can tell |
-
-## Future Architecture (Phase 2+)
-
-```
-Phase 2 additions:
-  ├── Reddit fetcher (r/programming, r/ClaudeAI)
-  ├── Changelog monitors (Anthropic, Vercel, Node.js)
-  └── Breaking change detection (AI flags breaking changes in changelogs)
-
-Phase 3 additions:
-  ├── Email digest (Resend, triggered by daily cron)
-  ├── Bookmarking (stored in separate blob or cookie)
-  ├── User-configurable tech stack profile
-  └── Search with keyword highlighting
-```
+| What breaks | Effect | What happens |
+|---|---|---|
+| One source is down or times out | That source contributes nothing this cycle | `Promise.allSettled` plus a per-fetcher catch, status flips to `error` with the message on `/api/sources` |
+| GitHub changes its trending markup | Cheerio selectors return nothing | Fetcher throws or returns empty, same handling as above, visible in source health |
+| AI Gateway errors | No summaries for the affected batch | `enrichBatch` catches per batch and passes its stories through with `relevant: true`, logging a warning since those skip the filter |
+| Blob write fails | This cycle's stories are lost | Next cycle re-fetches, nothing is half-written since each write is a whole-file replace |
+| Blob read fails | Empty feed | Every read path returns `[]` or a default health object rather than throwing |
+| Cron does not fire | Feed goes stale | Last-fetch timestamp is on screen, so it is visible rather than silent |

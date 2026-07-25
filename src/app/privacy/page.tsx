@@ -20,16 +20,16 @@ export default function PrivacyPage() {
         </p>
       </Section>
 
-      <Section title="Data We Collect">
-        <p>The web dashboard and macOS app do not require accounts, logins, or registration. We collect:</p>
-        <ul className="mt-2 list-inside list-disc space-y-1 text-text-secondary">
-          <li><strong className="text-text-bright">No personal data</strong> — no names, emails, or identifiers</li>
-          <li><strong className="text-text-bright">No analytics or tracking</strong> — no cookies, no third-party trackers, no fingerprinting</li>
-          <li><strong className="text-text-bright">No usage data</strong> — we do not track which stories you read or click</li>
-        </ul>
+      <Section title="What we collect">
+        <p>
+          Nothing. The web dashboard and the macOS app have no accounts, logins, or registration,
+          so there is nothing to attach data to. Specifically, we hold no names, emails, or other
+          identifiers; we run no analytics, set no cookies, embed no third-party trackers, and do
+          no fingerprinting; and we do not record which stories you read or click.
+        </p>
       </Section>
 
-      <Section title="Data the App Stores Locally">
+      <Section title="What the app stores on your Mac">
         <p>Sentinel Bar (the macOS app) stores the following on your device only:</p>
         <ul className="mt-2 list-inside list-disc space-y-1 text-text-secondary">
           <li>Cached story data from the public API (refreshed every 5 minutes)</li>
@@ -39,7 +39,7 @@ export default function PrivacyPage() {
         <p className="mt-2">This data never leaves your device and is not transmitted to us or any third party.</p>
       </Section>
 
-      <Section title="Third-Party Services">
+      <Section title="Where the stories come from">
         <p>The Service aggregates publicly available content from third-party sources:</p>
         <ul className="mt-2 list-inside list-disc space-y-1 text-text-secondary">
           <li>Hacker News (news.ycombinator.com)</li>
@@ -56,11 +56,11 @@ export default function PrivacyPage() {
         </p>
       </Section>
 
-      <Section title="AI Processing">
+      <Section title="AI processing">
         <p>
-          Stories may be processed by Claude (Anthropic) to generate one-line summaries and relevance
-          scores. Only story titles and descriptions are sent — no user data is included. Anthropic&apos;s
-          API does not retain inputs for training.
+          Stories may be sent to Claude (Anthropic) to generate one-line summaries and relevance
+          scores. What gets sent is the story title and description, nothing else. No user data is
+          involved, because there is none. Anthropic&apos;s API does not retain inputs for training.
         </p>
       </Section>
 

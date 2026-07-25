@@ -1,35 +1,33 @@
 export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? 'https://sentinel-feed.pastelero.ph';
 
-// ── Centralized constants ──
-// Keep magic values here so changes propagate everywhere.
+// Values that would otherwise be magic numbers scattered across the SVG and
+// fetch code. Colors here are duplicated in globals.css because the radar needs
+// them in JS to color dots inline; keep the two in sync.
 
-/** Default fallback color when a topic has no color defined. */
+/** Fallback for a topic with no color of its own. Matches --info. */
 export const DEFAULT_TOPIC_COLOR = '#94a3b8';
 
-/** Color used for critical/security alerts. */
+/** Critical alerts. Same hex as the security topic and --danger, deliberately. */
 export const CRITICAL_COLOR = '#f87171';
 export const CRITICAL_COLOR_LIGHT = '#fca5a5';
 
-/** Primary accent green (sweep line, crosshair, active tab). */
+/** Sweep line, crosshair, active tab. Matches --success. */
 export const ACCENT_GREEN = '#34d399';
 
-/** Timeout applied to every outbound fetch in the fetcher pipeline. */
+/** Per-request budget for every outbound fetcher call, via AbortSignal.timeout. */
 export const FETCHER_TIMEOUT_MS = 10_000;
 
-/** How often the client polls for fresh stories (ms). */
+/** Client poll interval. Matches the s-maxage on the read routes, so most polls
+ *  are served by the CDN rather than the origin. */
 export const REFRESH_INTERVAL_MS = 60_000;
 
-/** Milliseconds in one hour. */
 export const HOUR_MS = 60 * 60 * 1000;
-
-/** Milliseconds in one day (24 hours). */
 export const DAY_MS = 24 * HOUR_MS;
 
-/** How many days of blobs the cleanup cron keeps. */
+/** How far back cleanup keeps daily blobs, and the ceiling on ?days=. */
 export const RETENTION_DAYS = 7;
 
-/** API route paths used by client-side fetches. */
 export const API = {
   stories: (days: number) => `/api/stories?days=${days}`,
   sources: '/api/sources',

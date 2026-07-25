@@ -28,7 +28,7 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
   const touchHandledRef = useRef(false);
   // A blip can be in two states: hovered (transient desktop preview that follows
   // the cursor) or selected (a pinned, interactive briefing). Selecting never
-  // navigates — opening the source is an explicit action inside the card.
+  // navigates; opening the source is a separate, explicit action inside the card.
   const [hoveredStory, setHoveredStory] = useState<PlottedStory | null>(null);
   const [selectedStory, setSelectedStory] = useState<PlottedStory | null>(null);
   // flip is precomputed on hover so render never reads the ref; CSS positions the tooltip.
@@ -307,7 +307,7 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
                 className="cursor-pointer focus-visible:outline-none"
                 role="button"
                 tabIndex={0}
-                aria-label={`${p.story.title} — open briefing`}
+                aria-label={`${p.story.title}, open briefing`}
                 onTouchStart={(e) => handleDotTap(p, e)}
                 onClick={(e) => handleDotClick(p, e)}
                 onKeyDown={(e) => handleDotKeyDown(p, e)}
