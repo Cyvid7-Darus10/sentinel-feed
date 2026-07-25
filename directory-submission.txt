@@ -1,0 +1,94 @@
+SENTINEL FEED / App directory submission
+========================================
+Copy-paste ready. Fields map 1:1 to the submission form.
+
+
+BASICS
+------
+
+App name:
+Sentinel Feed
+
+Tagline (~80 chars):
+Seven developer news sources on one radar. (42 chars)
+
+  Alternates:
+  - Seven dev news sources, one radar. Updated every 15 minutes, read in 5. (72)
+  - Your tech news, deduplicated, ranked, and summarized. (53)
+
+Website:
+https://sentinel-feed.pastelero.ph
+
+Categories (pick up to 3, first is the main one):
+1. Developer Tools   (main)
+2. AI
+3. Productivity
+
+
+DESCRIPTION & TAGS
+------------------
+
+Description:
+Checking Hacker News, GitHub Trending, Lobsters, Dev.to, daily.dev, Techmeme,
+and InfoQ every morning means seven tabs and a lot of the same links twice.
+
+Sentinel Feed pulls all seven on a 15-minute cron, drops duplicate URLs, sorts
+each story into a topic, ranks by score, and puts the result behind one
+dashboard.
+
+There are three ways to read it. Radar plots every story as a dot inside a
+topic sector, where score pulls the dot toward the center and makes it bigger,
+and security stories pulse red. Map shows all six sectors at once with the top
+stories in each. List is a plain ranked feed with topic tabs, for skimming.
+
+The six sectors are Security, AI/ML, Systems, Dev, Tools, and General, assigned
+by keyword and tag matching. Separately, anything matching a CVE, zero-day,
+breach, or exploit pattern gets flagged as critical, so it does not get buried
+under trending repos.
+
+Filtering is by source, by time window (6h, 12h, 24h, 7d), or by typing, which
+searches titles, summaries, authors, and tags. With an API key configured, each
+story also gets a one-line summary from Claude Haiku.
+
+None of the sources need an API key. They are fetched in parallel with
+independent error handling, so a source going down costs you that source and
+nothing else. Works on a phone.
+
+Tags (comma-separated):
+developer-tools, tech-news, ai-summaries, hacker-news, github-trending, rss, news-aggregator, security, dashboard, nextjs
+
+
+DETAILS
+-------
+
+Pricing:
+Free
+
+Launch date (optional):
+07/06/2026    (adjust to actual launch date, mm/dd/yyyy)
+
+Platforms:
+[x] Web
+[ ] iOS
+[ ] Android
+[ ] Desktop
+
+
+LOGO & SCREENSHOTS
+------------------
+
+App logo or icon (square PNG/JPG/WebP, min 256x256, up to 6 MB):
+  public/icon-512x512.png
+
+Screenshots (up to 4 images, 6 MB each):
+  docs/screenshots/radar-desktop.png    Radar view
+  docs/screenshots/map-desktop.png      Map view, six topic sectors
+  docs/screenshots/list-desktop.png     List view
+  docs/screenshots/topic-filter.png     Topic filtering, AI/ML
+
+
+NOTES
+-----
+- Repo: https://github.com/Cyvid7-Darus10/sentinel-feed
+- License: Apache-2.0
+- Stack: Next.js 16, React 19, TypeScript 5, Tailwind 4, Vercel AI SDK, @vercel/blob
