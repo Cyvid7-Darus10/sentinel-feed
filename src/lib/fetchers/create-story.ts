@@ -27,5 +27,7 @@ export function createStory(source: SourceId, input: StoryInput): Story {
     relevant: true,
     fetchedAt: new Date().toISOString(),
     publishedAt: input.publishedAt ?? null,
+    topic: null,
+    importance: null,
   };
 }

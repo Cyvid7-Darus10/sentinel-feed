@@ -20,6 +20,10 @@ export interface Story {
   readonly relevant: boolean;
   readonly fetchedAt: string;
   readonly publishedAt: string | null;
+  /** AI-assigned sector id (one of TOPICS); null until enriched or when AI is off. */
+  readonly topic: string | null;
+  /** AI-assigned 0-100 editorial weight, source-independent; null until enriched. */
+  readonly importance: number | null;
 }
 
 export interface SourceStatus {
