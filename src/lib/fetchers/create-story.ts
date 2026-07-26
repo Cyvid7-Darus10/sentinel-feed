@@ -1,5 +1,11 @@
 import type { Story, SourceId } from '../types';
 
+/** Upper bounds on stored text, so a misbehaving upstream cannot bloat the
+ *  daily blob with an unbounded title or description. Applied uniformly to
+ *  every source at the one place stories are built. */
+export const MAX_TITLE_LENGTH = 500;
+export const MAX_DESCRIPTION_LENGTH = 1000;
+
 interface StoryInput {
   readonly id: string;
   readonly title: string;
@@ -17,11 +23,13 @@ export function createStory(source: SourceId, input: StoryInput): Story {
   return {
     id: input.id,
     source,
-    title: input.title,
+    title: input.title.slice(0, MAX_TITLE_LENGTH),
     url: input.url,
     score: input.score ?? null,
     author: input.author ?? null,
-    description: input.description ?? null,
+    description: input.description
+      ? input.description.slice(0, MAX_DESCRIPTION_LENGTH)
+      : null,
     tags: input.tags ? [...input.tags] : [],
     summary: null,
     relevant: true,

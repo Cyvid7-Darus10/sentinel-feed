@@ -1,5 +1,5 @@
 import type { FetchResult, Story } from '../types';
-import { normalizeUrl } from '../utils';
+import { normalizeUrl, isSafeUrl } from '../utils';
 import { fetchHackerNews } from './hackernews';
 import { fetchGithubTrending } from './github-trending';
 import { fetchLobsters } from './lobsters';
@@ -25,8 +25,11 @@ export async function fetchAllSources(
     fetchers.map(async ({ source, fn }): Promise<FetchResult> => {
       try {
         const raw = await fn();
+        // Reject non-http(s) links (e.g. javascript:/data:) at the ingestion
+        // boundary, so an unsafe URL from a poisoned feed never reaches the
+        // public blob store or the API, regardless of render-side guards.
         const deduped = raw.filter(
-          (s) => !existingUrls.has(normalizeUrl(s.url))
+          (s) => isSafeUrl(s.url) && !existingUrls.has(normalizeUrl(s.url))
         );
         return { source, stories: deduped, error: null };
       } catch (err) {
