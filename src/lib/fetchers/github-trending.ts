@@ -4,7 +4,10 @@ import { createStory } from './create-story';
 import { FETCHER_TIMEOUT_MS } from '../config';
 
 const GITHUB_TRENDING_URL = 'https://github.com/trending';
+const GITHUB_ORIGIN = 'https://github.com';
 const LANGUAGES = ['typescript', 'python', 'go', 'rust'];
+// Defensive ceiling per language page in case the markup ever balloons.
+const MAX_REPOS_PER_LANGUAGE = 25;
 
 interface TrendingRepo {
   owner: string;
@@ -67,12 +70,24 @@ function parseTrendingHtml(html: string): TrendingRepo[] {
   const repos: TrendingRepo[] = [];
 
   $('article.Box-row').each((_, el) => {
+    if (repos.length >= MAX_REPOS_PER_LANGUAGE) return false;
     const $el = $(el);
 
     const repoLink = $el.find('h2 a').attr('href')?.trim();
     if (!repoLink) return;
 
-    const parts = repoLink.split('/').filter(Boolean);
+    // Resolve against the fixed origin and confirm the host, so unexpected
+    // markup (an absolute or protocol-relative href) fails closed rather than
+    // producing a malformed, host-confusable URL by string concatenation.
+    let repoUrl: URL;
+    try {
+      repoUrl = new URL(repoLink, GITHUB_ORIGIN);
+    } catch {
+      return;
+    }
+    if (repoUrl.hostname !== 'github.com') return;
+
+    const parts = repoUrl.pathname.split('/').filter(Boolean);
     if (parts.length < 2) return;
     const [owner, repo] = parts;
 
@@ -93,7 +108,7 @@ function parseTrendingHtml(html: string): TrendingRepo[] {
       description,
       language,
       starsToday,
-      url: `https://github.com${repoLink}`,
+      url: repoUrl.toString(),
     });
   });
 
