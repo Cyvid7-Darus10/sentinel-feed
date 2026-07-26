@@ -32,14 +32,25 @@ function blend(
   percentile: number | undefined,
   importance: number | null
 ): number {
-  // ?? null guards stories parsed from pre-upgrade blobs where the field is undefined.
-  const imp = importance ?? null;
-  if (percentile !== undefined && imp !== null) {
-    return 0.5 * percentile + 0.5 * (imp / 100);
-  }
-  if (percentile !== undefined) return percentile;
-  if (imp !== null) return imp / 100;
-  return 0;
+  // Stored blobs are read back without re-validation, so importance may be
+  // undefined (pre-upgrade blobs), NaN/Infinity, or outside 0-100. Anything
+  // that isn't a finite number in range is treated as absent; anything else
+  // is clamped rather than trusted as-is.
+  const imp =
+    typeof importance === 'number' && Number.isFinite(importance)
+      ? Math.min(100, Math.max(0, importance))
+      : null;
+
+  const rank =
+    percentile !== undefined && imp !== null
+      ? 0.5 * percentile + 0.5 * (imp / 100)
+      : percentile !== undefined
+        ? percentile
+        : imp !== null
+          ? imp / 100
+          : 0;
+
+  return Math.min(1, Math.max(0, rank));
 }
 
 /** Percentile of each scored story among scored stories from the same source.

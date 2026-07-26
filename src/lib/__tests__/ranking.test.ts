@@ -109,6 +109,28 @@ describe('rankStories', () => {
   });
 });
 
+describe('blend clamps untrusted stored importance', () => {
+  it('clamps an absurdly large importance to 100 (importance-only path)', () => {
+    const stories = [makeStory({ id: 'x', score: null, importance: 1e308 })];
+    expect(rankStories(stories).get('x')).toBe(1);
+  });
+
+  it('clamps a negative importance to 0 (importance-only path)', () => {
+    const stories = [makeStory({ id: 'x', score: null, importance: -5 })];
+    expect(rankStories(stories).get('x')).toBe(0);
+  });
+
+  it('treats a NaN importance as absent, falling back to percentile alone', () => {
+    const stories = [
+      makeStory({ id: 'a', score: 10, importance: NaN }),
+      makeStory({ id: 'b', score: 90, importance: NaN }),
+    ];
+    const ranks = rankStories(stories);
+    expect(ranks.get('a')).toBeCloseTo(0);
+    expect(ranks.get('b')).toBeCloseTo(1);
+  });
+});
+
 describe('sortStoriesByRank', () => {
   it('sorts descending by rank without mutating the input', () => {
     const low = makeStory({ id: 'low', score: 10 });
