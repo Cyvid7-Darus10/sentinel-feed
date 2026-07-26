@@ -436,7 +436,7 @@ export function RadarView({ stories, onSelectTopic }: RadarViewProps) {
           CRITICAL
         </span>
         <span className="hidden text-border sm:inline">|</span>
-        <span>LARGE = HIGH SCORE</span>
+        <span>LARGE = HIGH SIGNAL</span>
         <span className="hidden text-border sm:inline">|</span>
         {TOPICS.map((topic) => (
           <span key={topic.id} className="flex items-center gap-1">

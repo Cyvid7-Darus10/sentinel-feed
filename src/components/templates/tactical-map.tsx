@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import type { Story, SourceId, SourceHealth } from '@/lib/types';
-import { TOPICS, categorizeStories, categorizeTopic } from '@/lib/topics';
+import { TOPICS, categorizeStories, resolveTopic } from '@/lib/topics';
+import { sortStoriesByRank } from '@/lib/ranking';
 import { DEFAULT_TOPIC_COLOR } from '@/lib/config';
 import { relativeTime } from '@/lib/utils';
 import { type TimeRange, timeRangeToMs } from '@/lib/time-range';
@@ -64,14 +65,14 @@ export function TacticalMap({ initialStories, initialHealth }: TacticalMapProps)
 
   const displayStories = useMemo(() => {
     if (!activeTopic) {
-      return [...filtered].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+      return sortStoriesByRank(filtered);
     }
     return categorized[activeTopic] ?? [];
   }, [filtered, activeTopic, categorized]);
 
   const getTopicColor = useCallback(
     (story: Story): string => {
-      const topicId = activeTopic ?? categorizeTopic(story);
+      const topicId = activeTopic ?? resolveTopic(story);
       return TOPICS.find((t) => t.id === topicId)?.color ?? DEFAULT_TOPIC_COLOR;
     },
     [activeTopic]

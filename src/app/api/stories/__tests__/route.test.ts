@@ -25,6 +25,8 @@ function makeStory(overrides: Partial<Story> = {}): Story {
     relevant: true,
     fetchedAt: '2026-04-01T12:00:00Z',
     publishedAt: null,
+    topic: null,
+    importance: null,
     ...overrides,
   };
 }

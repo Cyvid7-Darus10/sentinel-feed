@@ -3,6 +3,7 @@ import { readStoriesForDays } from '@/lib/storage';
 import type { SourceId } from '@/lib/types';
 import { VALID_SOURCE_SET } from '@/lib/sources';
 import { PUBLIC_GET_HEADERS } from '@/lib/config';
+import { sortStoriesByRank } from '@/lib/ranking';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -21,14 +22,9 @@ export async function GET(request: NextRequest) {
       ? stories.filter((s) => s.source === source)
       : stories;
 
-    // Score first, recency as the tiebreak. Sources with no score (RSS feeds) sort to
-    // the bottom via ?? 0 and then order among themselves by arrival.
-    const sorted = [...filtered].sort((a, b) => {
-      const scoreA = a.score ?? 0;
-      const scoreB = b.score ?? 0;
-      if (scoreB !== scoreA) return scoreB - scoreA;
-      return new Date(b.fetchedAt).getTime() - new Date(a.fetchedAt).getTime();
-    });
+    // Rank blends per-source score percentile with AI importance, so score-less
+    // RSS sources compete instead of sinking; recency breaks ties inside ranking.
+    const sorted = sortStoriesByRank(filtered);
 
     return NextResponse.json(
       { stories: sorted, count: sorted.length },

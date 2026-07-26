@@ -16,6 +16,8 @@ function makeStory(overrides: Partial<Story> = {}): Story {
     relevant: true,
     fetchedAt: '2026-04-01T12:00:00Z',
     publishedAt: null,
+    topic: null,
+    importance: null,
     ...overrides,
   };
 }
@@ -101,5 +103,29 @@ describe('plotStories', () => {
     const first = plotStories(stories, 350, 350, 280);
     const second = plotStories(stories, 350, 350, 280);
     expect(first).toEqual(second);
+  });
+});
+
+describe('plotStories with enriched fields', () => {
+  it('places a story in its AI-assigned sector, not the regex sector', () => {
+    // Regex would file this under security ("leak"); AI says systems (topicIdx 2).
+    const story = makeStory({ title: 'Fixing a memory leak in Go', topic: 'systems' });
+    const [plotted] = plotStories([story], 200, 200, 180);
+    expect(plotted.topicIdx).toBe(2);
+  });
+
+  it('pulls a high-importance no-score story toward the center', () => {
+    const important = makeStory({
+      id: 'imp', source: 'techmeme', score: null, importance: 95,
+    });
+    const unranked = makeStory({
+      id: 'meh', source: 'techmeme', score: null, importance: null,
+    });
+    const plotted = plotStories([important, unranked], 200, 200, 180);
+    const dist = (p: { x: number; y: number }) =>
+      Math.hypot(p.x - 200, p.y - 200);
+    const impDot = plotted.find((p) => p.story.id === 'imp')!;
+    const mehDot = plotted.find((p) => p.story.id === 'meh')!;
+    expect(dist(impDot)).toBeLessThan(dist(mehDot));
   });
 });

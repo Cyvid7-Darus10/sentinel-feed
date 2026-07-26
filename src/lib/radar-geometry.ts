@@ -1,5 +1,6 @@
 import type { Story } from './types';
-import { TOPICS, categorizeTopic } from './topics';
+import { TOPICS, resolveTopic } from './topics';
+import { rankStories } from './ranking';
 import { isCritical } from './classification';
 
 // LCG seeded from the story id, so a dot lands in the same spot on every render.
@@ -52,8 +53,8 @@ interface MutablePlottedStory extends Omit<PlottedStory, 'x' | 'y'> {
 
 /**
  * Lays out stories as dots inside the radar: angle by topic sector, radius by
- * score (higher score → nearer center), then relaxes collisions and clamps
- * everything between the center dead-zone and the outer ring.
+ * blended rank (higher rank → nearer center), then relaxes collisions and
+ * clamps everything between the center dead-zone and the outer ring.
  */
 export function plotStories(
   stories: readonly Story[],
@@ -61,15 +62,19 @@ export function plotStories(
   centerY: number,
   radius: number
 ): PlottedStory[] {
+  const ranks = rankStories(stories);
+
   const byTopic: Record<string, Story[]> = {};
   for (const topic of TOPICS) {
     byTopic[topic.id] = [];
   }
   for (const story of stories) {
-    byTopic[categorizeTopic(story)].push(story);
+    byTopic[resolveTopic(story)].push(story);
   }
   for (const topic of TOPICS) {
-    byTopic[topic.id].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    byTopic[topic.id].sort(
+      (a, b) => (ranks.get(b.id) ?? 0) - (ranks.get(a.id) ?? 0)
+    );
   }
 
   const sectorAngle = (2 * Math.PI) / TOPICS.length;
@@ -79,19 +84,18 @@ export function plotStories(
     const topic = TOPICS[i];
     const topicStories = byTopic[topic.id];
     const baseAngle = i * sectorAngle - Math.PI / 2;
-    const maxScore = topicStories[0]?.score ?? 1;
 
     for (let j = 0; j < topicStories.length; j++) {
       const story = topicStories[j];
       const rng = seededRandom(story.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0));
       const critical = isCritical(story);
 
-      // Score maps to radius: the best story in a sector sits innermost. The 0.75
-      // factor stops a single runaway score from flattening everything else to the rim.
-      const normalizedScore = maxScore > 0 ? (story.score ?? 0) / maxScore : 0.5;
+      // Rank maps to radius: the best-ranked story in a sector sits innermost. The
+      // 0.75 factor stops a single top rank from flattening everything else to the rim.
+      const rank = ranks.get(story.id) ?? 0;
       const rMin = radius * 0.15;
       const rMax = radius * 0.92;
-      const r = rMin + (1 - normalizedScore * 0.75) * (rMax - rMin);
+      const r = rMin + (1 - rank * 0.75) * (rMax - rMin);
 
       // Angle within the sector, kept off the dividing lines by a small margin.
       const angleMargin = sectorAngle * 0.08;
@@ -106,7 +110,7 @@ export function plotStories(
 
       // Critical stories get a fixed, larger radius so they read as urgent regardless
       // of how few upvotes they have.
-      const dotR = critical ? 6 : 3 + normalizedScore * 3;
+      const dotR = critical ? 6 : 3 + rank * 3;
 
       plotted.push({
         story,

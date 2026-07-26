@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TOPICS, categorizeTopic, categorizeStories } from '../topics';
+import { TOPICS, categorizeTopic, categorizeStories, resolveTopic } from '../topics';
 import type { Story } from '../types';
 
 function makeStory(overrides: Partial<Story> = {}): Story {
@@ -16,6 +16,8 @@ function makeStory(overrides: Partial<Story> = {}): Story {
     relevant: true,
     fetchedAt: '2026-04-01T00:00:00Z',
     publishedAt: null,
+    topic: null,
+    importance: null,
     ...overrides,
   };
 }
@@ -138,5 +140,52 @@ describe('categorizeStories', () => {
     const result = categorizeStories(stories);
     expect(result.security[0].score).toBe(10);
     expect(result.security[1].score).toBeNull();
+  });
+});
+
+describe('resolveTopic', () => {
+  it('prefers the AI-assigned topic over the regex', () => {
+    // Regex would say "security" (mentions "leak"); AI knows better.
+    const story = makeStory({ title: 'Fixing a memory leak in Go', topic: 'systems' });
+    expect(resolveTopic(story)).toBe('systems');
+  });
+
+  it('falls back to the regex when topic is null', () => {
+    const story = makeStory({ title: 'New CVE in OpenSSL', topic: null });
+    expect(resolveTopic(story)).toBe('security');
+  });
+
+  it('falls back to the regex when topic is not a known sector id', () => {
+    const story = makeStory({ title: 'New CVE in OpenSSL', topic: 'not-a-topic' });
+    expect(resolveTopic(story)).toBe('security');
+  });
+
+  it('does not throw on a pre-upgrade story with topic/importance undefined at runtime', () => {
+    const story = {
+      ...makeStory({ title: 'New CVE in OpenSSL' }),
+      topic: undefined,
+      importance: undefined,
+    } as unknown as Story;
+    expect(() => resolveTopic(story)).not.toThrow();
+    expect(resolveTopic(story)).toBe('security');
+  });
+
+  it('categorizeStories buckets by the AI topic when present', () => {
+    const story = makeStory({ title: 'Fixing a memory leak in Go', topic: 'systems' });
+    const buckets = categorizeStories([story]);
+    expect(buckets['systems']).toHaveLength(1);
+    expect(buckets['security']).toHaveLength(0);
+  });
+
+  it('sorts stories within a sector by blended rank, not raw score', () => {
+    // Both Techmeme (no score); only importance can order them.
+    const minor = makeStory({
+      id: 'minor', source: 'techmeme', score: null, importance: 10, topic: 'ai',
+    });
+    const major = makeStory({
+      id: 'major', source: 'techmeme', score: null, importance: 90, topic: 'ai',
+    });
+    const buckets = categorizeStories([minor, major]);
+    expect(buckets['ai'].map((s) => s.id)).toEqual(['major', 'minor']);
   });
 });
