@@ -34,7 +34,14 @@ function makeStory(overrides: Partial<Story> = {}): Story {
 }
 
 /** Build a resolved generateText result with structured `output`. */
-function aiOutput(results: Array<{ relevant: boolean; summary: string | null }>) {
+function aiOutput(
+  results: Array<{
+    relevant: boolean;
+    summary: string | null;
+    topic?: string;
+    importance?: number;
+  }>
+) {
   return { output: results } as never;
 }
 
@@ -197,5 +204,55 @@ describe('enrichStories', () => {
 
     const call = mockGenerateText.mock.calls[0][0] as { prompt: string };
     expect(call.prompt).toContain('A cool project');
+  });
+
+  it('attaches AI-assigned topic and importance', async () => {
+    mockGenerateText.mockResolvedValueOnce(
+      aiOutput([
+        { relevant: true, summary: 'Kernel patch', topic: 'systems', importance: 72 },
+      ])
+    );
+
+    const result = await enrichStories([makeStory()]);
+
+    expect(result[0].topic).toBe('systems');
+    expect(result[0].importance).toBe(72);
+  });
+
+  it('leaves topic and importance null when the AI call throws', async () => {
+    mockGenerateText.mockRejectedValueOnce(new Error('NoObjectGeneratedError'));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const result = await enrichStories([makeStory()]);
+
+    expect(result[0].topic).toBeNull();
+    expect(result[0].importance).toBeNull();
+    warn.mockRestore();
+  });
+
+  it('leaves topic and importance null on a count mismatch', async () => {
+    mockGenerateText.mockResolvedValueOnce(
+      aiOutput([{ relevant: true, summary: 'Only one', topic: 'dev', importance: 50 }])
+    );
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const result = await enrichStories([makeStory({ id: 'hn-1' }), makeStory({ id: 'hn-2' })]);
+
+    expect(result[0].topic).toBeNull();
+    expect(result[1].importance).toBeNull();
+    warn.mockRestore();
+  });
+
+  it('sends up to 500 chars of description to the model', async () => {
+    mockGenerateText.mockResolvedValueOnce(
+      aiOutput([{ relevant: true, summary: 'ok', topic: 'dev', importance: 40 }])
+    );
+    const description = 'x'.repeat(600);
+
+    await enrichStories([makeStory({ description })]);
+
+    const call = mockGenerateText.mock.calls[0][0] as { prompt: string };
+    expect(call.prompt).toContain('x'.repeat(500));
+    expect(call.prompt).not.toContain('x'.repeat(501));
   });
 });
