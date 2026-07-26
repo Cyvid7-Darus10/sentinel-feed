@@ -160,6 +160,16 @@ describe('resolveTopic', () => {
     expect(resolveTopic(story)).toBe('security');
   });
 
+  it('does not throw on a pre-upgrade story with topic/importance undefined at runtime', () => {
+    const story = {
+      ...makeStory({ title: 'New CVE in OpenSSL' }),
+      topic: undefined,
+      importance: undefined,
+    } as unknown as Story;
+    expect(() => resolveTopic(story)).not.toThrow();
+    expect(resolveTopic(story)).toBe('security');
+  });
+
   it('categorizeStories buckets by the AI topic when present', () => {
     const story = makeStory({ title: 'Fixing a memory leak in Go', topic: 'systems' });
     const buckets = categorizeStories([story]);
