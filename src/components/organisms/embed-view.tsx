@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Story } from '@/lib/types';
-import { TOPICS, categorizeTopic } from '@/lib/topics';
+import { TOPICS, resolveTopic } from '@/lib/topics';
 import { formatScore } from '@/lib/sources';
 import { isCritical } from '@/lib/classification';
 import { DEFAULT_TOPIC_COLOR, CRITICAL_COLOR, API, DAY_MS } from '@/lib/config';
@@ -17,7 +17,7 @@ interface EmbedViewProps {
 function CompactStory({ story }: { readonly story: Story }) {
   const score = formatScore(story.source, story.score);
   const critical = isCritical(story);
-  const topicId = categorizeTopic(story);
+  const topicId = resolveTopic(story);
   const topicColor = TOPICS.find((t) => t.id === topicId)?.color ?? DEFAULT_TOPIC_COLOR;
 
   return (
@@ -82,13 +82,13 @@ export function EmbedView({ initialStories }: EmbedViewProps) {
   const topicCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const topic of TOPICS) counts[topic.id] = 0;
-    for (const story of recent) counts[categorizeTopic(story)]++;
+    for (const story of recent) counts[resolveTopic(story)]++;
     return counts;
   }, [recent]);
 
   const display = useMemo(() => {
     if (!activeTopic) return recent;
-    return recent.filter((s) => categorizeTopic(s) === activeTopic);
+    return recent.filter((s) => resolveTopic(s) === activeTopic);
   }, [recent, activeTopic]);
 
   const criticalCount = useMemo(

@@ -1,4 +1,5 @@
 import type { Story } from './types';
+import { rankStories } from './ranking';
 
 export interface Topic {
   readonly id: string;
@@ -95,8 +96,11 @@ export function categorizeStories(
     const topicId = resolveTopic(story);
     result[topicId].push(story);
   }
+  const ranks = rankStories(stories);
   for (const topic of TOPICS) {
-    result[topic.id].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    result[topic.id].sort(
+      (a, b) => (ranks.get(b.id) ?? 0) - (ranks.get(a.id) ?? 0)
+    );
   }
   return result;
 }

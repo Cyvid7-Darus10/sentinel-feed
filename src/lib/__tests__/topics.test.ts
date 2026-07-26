@@ -166,4 +166,16 @@ describe('resolveTopic', () => {
     expect(buckets['systems']).toHaveLength(1);
     expect(buckets['security']).toHaveLength(0);
   });
+
+  it('sorts stories within a sector by blended rank, not raw score', () => {
+    // Both Techmeme (no score); only importance can order them.
+    const minor = makeStory({
+      id: 'minor', source: 'techmeme', score: null, importance: 10, topic: 'ai',
+    });
+    const major = makeStory({
+      id: 'major', source: 'techmeme', score: null, importance: 90, topic: 'ai',
+    });
+    const buckets = categorizeStories([minor, major]);
+    expect(buckets['ai'].map((s) => s.id)).toEqual(['major', 'minor']);
+  });
 });
