@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { NextRequest } from 'next/server';
 import type { SourceHealth } from '@/lib/types';
 
 vi.mock('@/lib/storage', () => ({
@@ -10,9 +11,19 @@ import { readSourceHealth } from '@/lib/storage';
 
 const mockRead = vi.mocked(readSourceHealth);
 
+function request(query = ''): NextRequest {
+  return new NextRequest(`http://localhost/api/sources${query}`);
+}
+
 describe('GET /api/sources', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('rejects any query param with 400 before reading storage', async () => {
+    const res = await GET(request('?cachebust=123'));
+    expect(res.status).toBe(400);
+    expect(mockRead).not.toHaveBeenCalled();
   });
 
   it('returns the stored source health', async () => {
@@ -31,7 +42,7 @@ describe('GET /api/sources', () => {
     };
     mockRead.mockResolvedValueOnce(health);
 
-    const res = await GET();
+    const res = await GET(request());
     const body = await res.json();
 
     expect(res.status).toBe(200);
@@ -41,7 +52,7 @@ describe('GET /api/sources', () => {
   it('sets CDN cache and CORS headers so polling hits the edge', async () => {
     mockRead.mockResolvedValueOnce({ sources: {}, updatedAt: '2026-04-01T12:00:00Z' });
 
-    const res = await GET();
+    const res = await GET(request());
 
     expect(res.headers.get('Cache-Control')).toContain('s-maxage=60');
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*');
@@ -51,7 +62,7 @@ describe('GET /api/sources', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     mockRead.mockRejectedValueOnce(new Error('blob error'));
 
-    const res = await GET();
+    const res = await GET(request());
     const body = await res.json();
 
     expect(res.status).toBe(500);

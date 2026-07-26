@@ -2,11 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readStoriesForDays } from '@/lib/storage';
 import type { SourceId } from '@/lib/types';
 import { VALID_SOURCE_SET } from '@/lib/sources';
-import { PUBLIC_GET_HEADERS } from '@/lib/config';
+import { PUBLIC_GET_HEADERS, hasOnlyAllowedParams } from '@/lib/config';
 import { sortStoriesByRank } from '@/lib/ranking';
+
+const ALLOWED_PARAMS = ['days', 'source'] as const;
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
+
+  if (!hasOnlyAllowedParams(searchParams, ALLOWED_PARAMS)) {
+    return NextResponse.json(
+      { error: 'Unsupported query parameter' },
+      { status: 400, headers: PUBLIC_GET_HEADERS }
+    );
+  }
 
   const rawSource = searchParams.get('source');
   const source: SourceId | null =
