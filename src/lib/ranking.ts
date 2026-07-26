@@ -57,8 +57,16 @@ function scorePercentilesBySource(
   for (const group of bySource.values()) {
     const scores = group.map((s) => s.score ?? 0);
     for (const story of group) {
-      const below = scores.filter((v) => v < (story.score ?? 0)).length;
-      percentiles.set(story.id, group.length > 1 ? below / (group.length - 1) : 1);
+      const score = story.score ?? 0;
+      const below = scores.filter((v) => v < score).length;
+      const ties = scores.filter((v) => v === score).length;
+      // Midrank: tied scores share the middle of their band instead of all
+      // sinking to the bottom of it (an all-tied group would otherwise
+      // collapse every story to percentile 0).
+      percentiles.set(
+        story.id,
+        group.length > 1 ? (below + 0.5 * (ties - 1)) / (group.length - 1) : 1
+      );
     }
   }
   return percentiles;

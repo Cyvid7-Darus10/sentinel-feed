@@ -75,6 +75,30 @@ describe('rankStories', () => {
     expect(rankStories(stories).get('only')).toBe(1);
   });
 
+  it('shares the midrank percentile among tied scores instead of collapsing to 0', () => {
+    const stories = [
+      makeStory({ id: 'tie-a', score: 50, importance: null }),
+      makeStory({ id: 'tie-b', score: 50, importance: null }),
+      makeStory({ id: 'nothing', score: null, importance: null }),
+    ];
+    const ranks = rankStories(stories);
+    expect(ranks.get('tie-a')).toBeCloseTo(0.5);
+    expect(ranks.get('tie-b')).toBeCloseTo(0.5);
+    expect(ranks.get('tie-a')!).toBeGreaterThan(ranks.get('nothing')!);
+    expect(ranks.get('tie-b')!).toBeGreaterThan(ranks.get('nothing')!);
+  });
+
+  it('does not throw on a pre-upgrade story with topic/importance undefined at runtime', () => {
+    const story = {
+      ...makeStory({ score: 50 }),
+      topic: undefined,
+      importance: undefined,
+    } as unknown as Story;
+    expect(() => rankStories([story])).not.toThrow();
+    // Lone scored story in its source: percentile alone (importance treated as absent).
+    expect(rankStories([story]).get(story.id)).toBe(1);
+  });
+
   it('lets an important no-score story outrank a high-upvote fluff story', () => {
     const stories = [
       makeStory({ id: 'fluff', source: 'hackernews', score: 900, importance: 10 }),
