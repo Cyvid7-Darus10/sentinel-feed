@@ -122,6 +122,19 @@ describe('GET /api/stories', () => {
     });
   });
 
+  describe('query allowlist', () => {
+    it('rejects an unknown query param with 400 before reading storage', async () => {
+      const res = await GET(request('?days=7&cachebust=123'));
+      expect(res.status).toBe(400);
+      expect(mockRead).not.toHaveBeenCalled();
+    });
+
+    it('accepts the known params together', async () => {
+      const res = await GET(request('?days=1&source=hackernews'));
+      expect(res.status).toBe(200);
+    });
+  });
+
   describe('response headers', () => {
     it('sets CORS and cache-control headers', async () => {
       const res = await GET(request());

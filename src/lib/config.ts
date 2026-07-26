@@ -40,6 +40,22 @@ export const PUBLIC_GET_HEADERS = {
   'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
 } as const;
 
+/**
+ * True when every query param is in `allowed`. The CDN caches on the full URL,
+ * so rejecting unrecognized params stops an attacker from forcing an unbounded
+ * stream of cache-miss origin invocations with `?x=1`, `?x=2`, ...
+ */
+export function hasOnlyAllowedParams(
+  searchParams: URLSearchParams,
+  allowed: readonly string[]
+): boolean {
+  const allowedSet = new Set(allowed);
+  for (const key of searchParams.keys()) {
+    if (!allowedSet.has(key)) return false;
+  }
+  return true;
+}
+
 /** Mac App Store listing for the Sentinel Bar companion app. */
 export const APP_STORE_URL =
   'https://apps.apple.com/app/sentinel-feed/id6761529644?mt=12';

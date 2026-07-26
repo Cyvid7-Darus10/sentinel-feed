@@ -191,6 +191,24 @@ describe('fetchAllSources', () => {
     const results = await fetchAllSources(new Set());
     expect(results[0].error).toBe('Unknown error');
   });
+
+  it('drops stories whose URL is not http(s), so a poisoned feed link never lands in storage', async () => {
+    mockFetchHN.mockResolvedValueOnce([
+      makeStory({ id: 'hn-safe', url: 'https://example.com/ok' }),
+      makeStory({ id: 'hn-js', url: 'javascript:alert(1)' }),
+      makeStory({ id: 'hn-data', url: 'data:text/html,<script>alert(1)</script>' }),
+    ]);
+    mockFetchGH.mockResolvedValueOnce([]);
+    mockFetchLO.mockResolvedValueOnce([]);
+    mockFetchDev.mockResolvedValueOnce([]);
+    mockFetchDD.mockResolvedValueOnce([]);
+    mockFetchTM.mockResolvedValueOnce([]);
+    mockFetchIQ.mockResolvedValueOnce([]);
+
+    const results = await fetchAllSources(new Set());
+
+    expect(results[0].stories.map((s) => s.id)).toEqual(['hn-safe']);
+  });
 });
 
 describe('buildExistingUrlSet', () => {

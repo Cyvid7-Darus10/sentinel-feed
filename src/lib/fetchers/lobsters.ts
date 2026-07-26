@@ -3,6 +3,8 @@ import { createStory } from './create-story';
 import { FETCHER_TIMEOUT_MS } from '../config';
 
 const LOBSTERS_API = 'https://lobste.rs/hottest.json';
+// Defensive ceiling in case the upstream response ever balloons.
+const MAX_ITEMS = 30;
 
 interface LobstersItem {
   short_id: string;
@@ -30,7 +32,7 @@ export async function fetchLobsters(): Promise<Story[]> {
   const items: LobstersItem[] = await res.json();
   const stories: Story[] = [];
 
-  for (const item of items) {
+  for (const item of items.slice(0, MAX_ITEMS)) {
     if (!item.title) continue;
     const url = item.url || item.comments_url;
     if (!url) continue;
