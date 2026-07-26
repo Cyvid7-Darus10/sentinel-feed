@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TOPICS, categorizeTopic, categorizeStories } from '../topics';
+import { TOPICS, categorizeTopic, categorizeStories, resolveTopic } from '../topics';
 import type { Story } from '../types';
 
 function makeStory(overrides: Partial<Story> = {}): Story {
@@ -140,5 +140,30 @@ describe('categorizeStories', () => {
     const result = categorizeStories(stories);
     expect(result.security[0].score).toBe(10);
     expect(result.security[1].score).toBeNull();
+  });
+});
+
+describe('resolveTopic', () => {
+  it('prefers the AI-assigned topic over the regex', () => {
+    // Regex would say "security" (mentions "leak"); AI knows better.
+    const story = makeStory({ title: 'Fixing a memory leak in Go', topic: 'systems' });
+    expect(resolveTopic(story)).toBe('systems');
+  });
+
+  it('falls back to the regex when topic is null', () => {
+    const story = makeStory({ title: 'New CVE in OpenSSL', topic: null });
+    expect(resolveTopic(story)).toBe('security');
+  });
+
+  it('falls back to the regex when topic is not a known sector id', () => {
+    const story = makeStory({ title: 'New CVE in OpenSSL', topic: 'not-a-topic' });
+    expect(resolveTopic(story)).toBe('security');
+  });
+
+  it('categorizeStories buckets by the AI topic when present', () => {
+    const story = makeStory({ title: 'Fixing a memory leak in Go', topic: 'systems' });
+    const buckets = categorizeStories([story]);
+    expect(buckets['systems']).toHaveLength(1);
+    expect(buckets['security']).toHaveLength(0);
   });
 });

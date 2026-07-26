@@ -15,6 +15,8 @@ export const TOPICS: readonly Topic[] = [
   { id: 'general', label: 'GENERAL', color: '#94a3b8' },
 ];
 
+const TOPIC_ID_SET = new Set(TOPICS.map((t) => t.id));
+
 export function categorizeTopic(story: Story): string {
   const text =
     `${story.title} ${story.description ?? ''} ${story.tags.join(' ')}`.toLowerCase();
@@ -73,6 +75,15 @@ export function categorizeTopic(story: Story): string {
   return 'general';
 }
 
+/**
+ * The AI-assigned topic wins when present and valid; the keyword regex is the
+ * fallback for AI-off, failed-batch, and pre-upgrade stored stories.
+ */
+export function resolveTopic(story: Story): string {
+  if (story.topic && TOPIC_ID_SET.has(story.topic)) return story.topic;
+  return categorizeTopic(story);
+}
+
 export function categorizeStories(
   stories: readonly Story[]
 ): Record<string, Story[]> {
@@ -81,7 +92,7 @@ export function categorizeStories(
     result[topic.id] = [];
   }
   for (const story of stories) {
-    const topicId = categorizeTopic(story);
+    const topicId = resolveTopic(story);
     result[topicId].push(story);
   }
   for (const topic of TOPICS) {
