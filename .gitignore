@@ -45,3 +45,4 @@ sentinel-feed-*.png
 
 # screenshot tooling
 /screenshots/
+/.gif-frames/
