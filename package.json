@@ -20,7 +20,7 @@
     "@vercel/blob": "^2.3.2",
     "ai": "^6.0.142",
     "cheerio": "^1.2.0",
-    "next": "16.2.2",
+    "next": "16.2.12",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "zod": "^4.4.3"
@@ -32,10 +32,14 @@
     "@types/react-dom": "^19",
     "@vitest/coverage-v8": "^4.1.2",
     "eslint": "^9",
-    "eslint-config-next": "16.2.2",
+    "eslint-config-next": "16.2.12",
     "jsdom": "^29.0.1",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.2"
+  },
+  "overrides": {
+    "postcss": ">=8.5.25",
+    "sharp": ">=0.35.3"
   }
 }

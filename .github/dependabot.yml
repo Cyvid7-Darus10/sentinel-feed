@@ -1,0 +1,28 @@
+version: 2
+
+updates:
+  # The app's whole security posture rides on Next.js patch releases landing
+  # quickly — the framework accumulates advisories faster than anything else
+  # here, and an exact pin means npm audit fix will not bump it on its own.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    groups:
+      # Patch and minor bumps are the routine case; one PR a week keeps them
+      # from drowning out the majors, which need a human to read a changelog.
+      safe-updates:
+        update-types:
+          - minor
+          - patch
+    labels:
+      - dependencies
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    labels:
+      - dependencies

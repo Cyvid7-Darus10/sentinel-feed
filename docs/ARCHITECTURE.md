@@ -173,3 +173,8 @@ The app has no users, no auth, no forms, and no writes from the browser. That re
 | Blob write fails | This cycle's stories are lost | Next cycle re-fetches, nothing is half-written since each write is a whole-file replace |
 | Blob read fails | Empty feed | Every read path returns `[]` or a default health object rather than throwing |
 | Cron does not fire | Feed goes stale | Last-fetch timestamp is on screen, so it is visible rather than silent |
+| The dashboard throws while rendering | Fallback UI with a retry button | `src/app/error.tsx`. The page is `force-dynamic` and reads blob storage on render, so a storage outage lands here instead of blanking the document |
+| The root layout itself throws | Standalone fallback document | `src/app/global-error.tsx`. It replaces the layout, so `globals.css` and the font are gone and every style in it is inline |
+| Unknown route | 404 page, not indexed | `src/app/not-found.tsx` |
+
+Error digests are shown but messages are not. Next.js already redacts server-side error messages in production; the digest is what matches a report to the server log.

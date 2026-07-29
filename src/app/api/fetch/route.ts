@@ -20,13 +20,13 @@ import { verifyCronAuth } from '@/lib/cron-auth';
 export const maxDuration = 60;
 
 export async function GET(request: NextRequest) {
-  console.log('[fetch] Cron invoked at', new Date().toISOString());
-
+  // Auth first: the route is public, so logging before the check lets anyone
+  // write to the log stream by hitting the endpoint in a loop.
   const authError = verifyCronAuth(request, 'fetch');
   if (authError) return authError;
 
   try {
-    console.log('[fetch] Auth passed, starting pipeline');
+    console.log('[fetch] Cron invoked at', new Date().toISOString());
     const existing = await readTodayStories();
     const existingUrls = buildExistingUrlSet(existing);
     console.log('[fetch] Existing stories:', existing.length);
