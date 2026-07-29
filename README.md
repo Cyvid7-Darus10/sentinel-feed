@@ -22,21 +22,21 @@
 
 ## What it does
 
-Hacker News, GitHub Trending, Lobsters, Dev.to, daily.dev, Techmeme, InfoQ. Checking all seven every morning means seven tabs and a lot of the same links twice. Sentinel Feed pulls them on a 15-minute cron, drops duplicate URLs, sorts each story into a topic, ranks by score, and puts the result behind one dashboard.
+Hacker News, GitHub Trending, Lobsters, Dev.to, daily.dev, Techmeme, InfoQ. Checking all seven every morning means seven tabs and a lot of the same links twice. Sentinel Feed pulls them on a 15-minute cron, drops duplicate URLs, sorts each story into a topic, ranks them against each other, and puts the result behind one dashboard.
 
 There are three ways to read it:
 
-- Radar plots every story as a dot inside a topic sector. Score pulls the dot toward the center and makes it bigger. Security stories pulse red.
+- Radar plots every story as a dot inside a topic sector. Rank pulls the dot toward the center and makes it bigger. Security stories pulse red.
 - Map shows all six sectors at once with the top stories in each.
 - List is a plain ranked feed with topic tabs, for when you just want to skim titles.
 
-Everything else is filtering: by source, by time window (6h, 12h, 24h, 7d), or by typing in the search box, which matches against titles, summaries, authors, and tags. Anything that looks like a CVE or a breach gets flagged separately so it does not get buried under trending repos. If an `ANTHROPIC_API_KEY` is set, each story also gets a one-line summary from Claude Haiku.
+Everything else is filtering: by source, by time window (6h, 12h, 24h, 7d), or by typing in the search box, which matches against titles, summaries, authors, and tags. Anything that looks like a CVE or a breach gets flagged separately so it does not get buried under trending repos. If an `ANTHROPIC_API_KEY` is set, Claude Haiku also gives each story a one-line summary, a topic, and an importance weight; without one, the app still runs, just on regex topics and raw scores.
 
 ## The views
 
 ### Radar
 
-Dots are positioned by topic (angle) and score (radius), so the interesting stuff clusters near the middle. Hovering a dot on desktop previews the story. Clicking pins a briefing card with an explicit "Open source" button, which keeps a stray tap from launching a link you did not mean to open.
+Dots are positioned by topic (angle) and rank (radius), so the interesting stuff clusters near the middle. Hovering a dot on desktop previews the story. Clicking pins a briefing card with an explicit "Open source" button, which keeps a stray tap from launching a link you did not mean to open.
 
 <img src="docs/screenshots/radar-desktop.png" alt="Radar view" width="860" />
 
@@ -54,7 +54,7 @@ Six sectors in a grid, each listing its top stories with source badges, summarie
 
 ### List
 
-Sorted by community score. Each card carries the title, AI summary, source badge, author, relative time, tags, and score.
+Sorted by rank. Each card carries the title, AI summary, source badge, author, relative time, tags, and the raw source score.
 
 <img src="docs/screenshots/list-desktop.png" alt="List view" width="860" />
 
@@ -88,9 +88,15 @@ None of these need an API key. They are fetched in parallel through `Promise.all
 
 Duplicate links get dropped twice over: once against what is already stored, and once across sources within the same run, so a story that hits HN and Lobsters together only lands once.
 
+## Ranking
+
+Raw scores do not compare across sources. 400 upvotes on Hacker News and 40 reactions on Dev.to are both near the top of their own source, and Techmeme and InfoQ carry no score at all, so sorting on the raw number would pin every RSS story to the bottom permanently.
+
+So ordering uses a rank blended half from the story's score percentile *within its own source* and half from an AI-assigned importance weight. Score-less sources compete on importance alone; if the AI is off, rank falls back to the percentile. The number printed on a card is still the raw source score, because "412 points" means something and "0.83" does not.
+
 ## Topics
 
-Every story is sorted into one of six sectors by keyword and tag matching. First match wins, checked in this order:
+Every story is sorted into one of six sectors. The AI picks the sector during enrichment; when it is off, unavailable, or returns something unrecognized, a keyword and tag regex takes over. First match wins, checked in this order:
 
 | Sector | Color | Catches |
 |--------|-------|---------|
@@ -146,7 +152,7 @@ Fill in `.env.local` (or set these in the Vercel dashboard for production):
 |----------|----------|--------------|
 | `BLOB_READ_WRITE_TOKEN` | Yes | Vercel Blob storage token |
 | `CRON_SECRET` | Yes | Bearer token the cron routes check before doing anything |
-| `ANTHROPIC_API_KEY` | No | Turns on AI summaries and relevance filtering |
+| `ANTHROPIC_API_KEY` | No | Turns on AI summaries, topics, importance, and relevance filtering |
 | `ENABLE_AI_ENRICHMENT` | No | Set to `false` to skip the model entirely. Defaults to on |
 
 Then:
@@ -214,17 +220,23 @@ sentinel-feed/
 │       │   ├── infoq.ts            # RSS
 │       │   ├── rss.ts              # Shared RSS/Atom parser
 │       │   └── create-story.ts     # Story builder with defaults
-│       ├── ai.ts                   # Concurrent batched enrichment, summaries and relevance
+│       ├── ai.ts                   # Concurrent batched enrichment: relevance, summary, topic, importance
 │       ├── classification.ts       # Critical-alert regex
 │       ├── config.ts               # Constants that would otherwise be magic numbers
 │       ├── cron-auth.ts            # CRON_SECRET bearer check
 │       ├── radar-geometry.ts       # Radar layout math (pure, tested)
+│       ├── ranking.ts              # Source-independent rank: score percentile blended with importance
 │       ├── sources.ts              # Per-source names, badges, score units
 │       ├── storage.ts              # Vercel Blob reads and writes
 │       ├── time-range.ts           # Time-window type and helpers
 │       ├── topics.ts               # Keyword-based topic sorting
 │       ├── types.ts                # Shared interfaces
 │       └── utils.ts                # Date formatting, URL normalization
+├── docs/
+│   ├── ARCHITECTURE.md             # How the fetch cycle, storage, and ranking fit together
+│   ├── BRANDING.md                 # Design tokens, motion, copy register
+│   ├── brand/                      # Logo source art
+│   └── screenshots/                # README images
 ├── scripts/                        # Playwright screenshot and GIF capture
 ├── vercel.json                     # Cron schedules
 └── vitest.config.ts

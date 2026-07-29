@@ -27,7 +27,7 @@ The seven upstream sources are all public and unauthenticated: Hacker News (Fire
 2. Read today's blob and build a `Set` of normalized URLs from it.
 3. `fetchAllSources` runs all seven fetchers concurrently under `Promise.allSettled`. Each fetcher is also individually wrapped in try/catch, so a thrown error becomes `{ source, stories: [], error: message }` instead of taking down the cycle. Every fetcher passes `AbortSignal.timeout(FETCHER_TIMEOUT_MS)` to `fetch`, currently 10 seconds.
 4. Each fetcher's results are filtered against the existing URL set, then `dedupeStoriesByUrl` collapses the combined list. Both passes are needed: the first catches a story already stored from an earlier cycle, the second catches the same link arriving from HN and Lobsters in the same run.
-5. `enrichStories` splits everything into concurrent batches of 50 and asks Claude Haiku for a relevance boolean and a one-line summary per story. The batch size bounds prompt length, not total spend; every story gets analyzed.
+5. `enrichStories` splits everything into concurrent batches of 50 and asks Claude Haiku for a relevance boolean, a one-line summary, a topic, and an importance weight per story. The batch size bounds prompt length, not total spend; every story gets analyzed.
 6. Anything marked `relevant: false` is dropped. The rest is appended to today's blob.
 7. Per-source health goes to `meta/sources.json`: last fetch time, count, status, error message, running total for the day.
 
@@ -92,6 +92,8 @@ interface Story {
   readonly relevant: boolean;
   readonly fetchedAt: string;       // ISO
   readonly publishedAt: string | null;
+  readonly topic: string | null;    // AI-assigned sector, null until enriched
+  readonly importance: number | null; // AI-assigned 0-100 weight, null until enriched
 }
 
 interface SourceStatus {
@@ -119,17 +121,29 @@ Both cron routes go through `verifyCronAuth`, which compares the bearer token to
 
 Input validation on `/api/stories` is deliberately narrow. `source` is checked against `VALID_SOURCE_SET` and dropped if it does not match, and `days` is parsed, `NaN`-guarded, and clamped to 1 through 7. Nothing from the query string reaches a blob path.
 
+## Ranking
+
+Raw source scores are not comparable. An HN story with 400 upvotes and a Dev.to post with 40 reactions are both near the top of their respective sources, and Techmeme and InfoQ have no score at all, so sorting on the raw number pins every RSS story to the bottom forever.
+
+`ranking.ts` fixes that with a rank in `[0, 1]`, blended 50/50 from two parts: the story's score percentile *within its own source*, and the AI-assigned importance. Percentile-within-source is what makes upvotes and reactions comparable; importance is what lets score-less sources compete. Ties use the midrank, so an all-tied group does not collapse to zero.
+
+Both halves degrade independently. No importance falls back to percentile alone, which is the pre-upgrade behavior. No score falls back to importance alone. Neither gives 0. Stored blobs are read back without re-validation, so importance that is missing, non-finite, or out of range is treated as absent rather than trusted.
+
+Rank drives ordering in every view and the radius on the radar. It is never displayed: the number on a card is still the raw source score, because "412 points on HN" means something to a reader and "0.83" does not.
+
 ## Classification
 
-Two independent passes, neither of which calls a model.
+Topic assignment has two layers; the critical-alert pass has none, and neither calls a model at read time.
 
-`categorizeTopic` assigns exactly one of six sectors by testing regexes against the title, description, and tags. Order matters, because the first match wins: security, then AI, then systems, then tools, then dev, with general as the fallback. A story about a Kubernetes CVE lands in security, not tools.
+`resolveTopic` prefers the AI-assigned topic from enrichment and falls back to `categorizeTopic`, the keyword regex, whenever the AI topic is missing or is not one of the six known sectors. That covers AI-off, failed batches, and blobs stored before the field existed. The regex assigns exactly one sector by testing the title, description, and tags in a fixed order, first match wins: security, then AI, then systems, then tools, then dev, with general as the fallback. A story about a Kubernetes CVE lands in security, not tools.
 
 `classification.ts` is separate and orthogonal. It flags critical security stories by regex, independent of which sector the story landed in. Regex rather than a model call is a cost and latency decision. Also a correctness one: the CVE pattern either matches or it does not, which is not something a summarizer should get a vote on.
 
 ## What the AI does and does not do
 
-It does two things, both in a single batched call per cycle: decide whether a story is relevant to software engineers, and write a one-line reason it matters, capped at 120 characters. `temperature: 0`, structured output validated by a zod schema through `Output.array`.
+It does four things, all in a single batched call per cycle: decide whether a story is relevant to software engineers, write a one-line reason it matters capped at 120 characters, pick one of the six topic sectors, and assign a 0-100 importance weight. `temperature: 0`, structured output validated by a zod schema through `Output.array`.
+
+Each story is serialized into the prompt as its own isolated JSON object, one per line, so a title or description cannot break out of its string and steer the model's read of another story.
 
 It does not fetch or summarize article bodies, generate embeddings, do multi-turn reasoning, or touch images.
 
